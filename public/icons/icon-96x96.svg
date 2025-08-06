@@ -1,0 +1,12 @@
+
+    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b82f6"/>
+          <stop offset="100%" style="stop-color:#1d4ed8"/>
+        </linearGradient>
+      </defs>
+      <rect width="96" height="96" fill="url(#grad)" rx="9.600000000000001"/>
+      <text x="48" y="57.599999999999994" font-family="Arial" font-size="28.799999999999997" font-weight="bold" text-anchor="middle" fill="white">POS</text>
+    </svg>
+  

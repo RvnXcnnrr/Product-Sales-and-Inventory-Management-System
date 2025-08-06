@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Simple Test</title>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="module">
+        console.log('Script executing...')
+        
+        // Test if React can load
+        import React from 'react'
+        import ReactDOM from 'react-dom/client'
+        
+        console.log('React imported successfully')
+        
+        const TestComponent = () => {
+            console.log('TestComponent rendering')
+            return React.createElement('div', {
+                style: {
+                    padding: '20px',
+                    backgroundColor: 'yellow',
+                    fontSize: '24px',
+                    minHeight: '100vh'
+                }
+            }, 
+            React.createElement('h1', null, '🟡 EMERGENCY TEST'),
+            React.createElement('p', null, 'If you see this YELLOW page, React is working!'),
+            React.createElement('p', null, 'Environment URL: ' + (import.meta.env.VITE_SUPABASE_URL || 'Not found')),
+            React.createElement('button', {
+                onClick: () => alert('Button clicked!'),
+                style: {
+                    padding: '10px',
+                    fontSize: '16px'
+                }
+            }, 'Click me!')
+            )
+        }
+        
+        console.log('Creating root...')
+        const root = ReactDOM.createRoot(document.getElementById('root'))
+        console.log('Rendering...')
+        root.render(React.createElement(TestComponent))
+        console.log('Render complete!')
+    </script>
+</body>
+</html>
