@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
+import { formatCurrency } from '../utils/format'
 // import { setOfflineData, getOfflineData } from '../lib/supabase'
 
 // Temporary functions to replace supabase offline functions
@@ -168,7 +169,7 @@ export const CartProvider = ({ children }) => {
     }
 
     dispatch({ type: 'ADD_ITEM', payload: cartItem })
-    toast.success(`${product.name} added to cart`)
+    toast.success(`${product.name} (${formatCurrency(cartItem.price)}) added to cart`)
   }
 
   const updateItem = (productId, updates) => {

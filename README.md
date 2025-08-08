@@ -58,6 +58,39 @@ yarn install
 Create a `.env` file in the root directory:
 
 ```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 4. Start the Development Server
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+### 5. Authentication & Store Setup
+
+> **IMPORTANT**: If you experience login issues, use the Migration Helper:
+> 
+> Navigate to: `http://localhost:5173/migration` after logging in.
+> 
+> This tool fixes user connections to stores. See `AUTH_STORE_USER_FIX.md` for details.
+
+## 📦 Database Setup
+
+See `SUPABASE_SETUP.md` for complete setup instructions.
+
+## 📚 Documentation
+
+For more detailed documentation:
+
+- [User Guide](docs/USER_GUIDE.md)
+- [Developer Guide](docs/DEVELOPER_GUIDE.md)
+- [API Documentation](docs/API_DOCS.md)
+- [Authentication Fix](AUTH_STORE_USER_FIX.md)
+- [Supabase Trigger Setup](SUPABASE_TRIGGER_SETUP.md)
 REACT_APP_SUPABASE_URL=your_supabase_project_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 REACT_APP_NAME="POS & Inventory Management"

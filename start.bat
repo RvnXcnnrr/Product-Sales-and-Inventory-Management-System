@@ -4,6 +4,12 @@ title POS & Inventory Management System - Quick Start
 echo 🚀 POS & Inventory Management System - Quick Start
 echo =================================================
 
+echo 📢 IMPORTANT: If you're having issues with user accounts:
+echo    Navigate to the Migration Helper after login:
+echo    http://localhost:5173/migration
+echo    This will fix the issue with user accounts not being linked to store_users table.
+echo.
+
 REM Check if Node.js is installed
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -76,10 +82,7 @@ echo    The application will open at http://localhost:3000
 echo    Press Ctrl+C to stop the server
 echo.
 
-REM Demo credentials info
-echo 🔑 Demo Credentials (for testing):
-echo    Email: demo@example.com
-echo    Password: demo123
+REM Application ready notification
 echo.
 
 timeout /t 2 >nul

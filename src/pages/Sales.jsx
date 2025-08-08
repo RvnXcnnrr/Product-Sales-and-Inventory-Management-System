@@ -13,6 +13,7 @@ import { useCart } from '../contexts/CartContext'
 import Modal from '../components/ui/Modal'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
+import { formatCurrency } from '../utils/format'
 
 const Sales = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -208,7 +209,7 @@ const Sales = () => {
               <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-lg font-bold text-primary-600">
-                  ${product.selling_price.toFixed(2)}
+                  {formatCurrency(product.selling_price)}
                 </span>
                 <span className="text-sm text-gray-500">
                   {product.stock_quantity} in stock
@@ -275,7 +276,7 @@ const Sales = () => {
                     
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-                      <p className="text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                                            <p className="text-sm text-gray-500">{formatCurrency(item.price)} each</p>
                     </div>
                     
                     <div className="flex items-center space-x-2">
@@ -314,21 +315,21 @@ const Sales = () => {
               <div className="border-t border-gray-200 p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>${totals.subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(totals.subtotal)}</span>
                 </div>
                 {totals.discount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Discount ({totals.discount}%):</span>
-                    <span>-${totals.discountAmount.toFixed(2)}</span>
+                    <span>-{formatCurrency(totals.discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Tax ({totals.taxRate}%):</span>
-                  <span>${totals.taxAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(totals.taxAmount)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total:</span>
-                  <span>${totals.total.toFixed(2)}</span>
+                  <span>{formatCurrency(totals.total)}</span>
                 </div>
               </div>
 
@@ -360,21 +361,21 @@ const Sales = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>${totals.subtotal.toFixed(2)}</span>
+                <span>{formatCurrency(totals.subtotal)}</span>
               </div>
               {totals.discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount:</span>
-                  <span>-${totals.discountAmount.toFixed(2)}</span>
+                  <span>-{formatCurrency(totals.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Tax:</span>
-                <span>${totals.taxAmount.toFixed(2)}</span>
+                <span>{formatCurrency(totals.taxAmount)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>Total:</span>
-                <span>${totals.total.toFixed(2)}</span>
+                <span>{formatCurrency(totals.total)}</span>
               </div>
             </div>
           </div>
@@ -429,7 +430,7 @@ const Sales = () => {
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-green-800">Change Due:</span>
                     <span className="text-xl font-bold text-green-800">
-                      ${change.toFixed(2)}
+                      {formatCurrency(change)}
                     </span>
                   </div>
                 </div>

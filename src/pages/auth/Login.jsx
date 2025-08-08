@@ -183,14 +183,6 @@ const Login = () => {
         </p>
       </div>
 
-      {/* Demo credentials */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <p className="text-xs text-gray-600 mb-2 font-medium">Demo Credentials:</p>
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>Email: demo@posystem.com</p>
-          <p>Password: demo123</p>
-        </div>
-      </div>
     </div>
   )
 }

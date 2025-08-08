@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Store, 
   Users, 
@@ -14,16 +14,30 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import useSystemSettings from '../utils/systemSettings'
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('store')
   const [loading, setLoading] = useState(false)
+  const { settings, updateSettings } = useSystemSettings()
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
+    reset
   } = useForm()
+
+  // Initialize form with system settings
+  useEffect(() => {
+    reset({
+      currency: settings.currency || 'PHP',
+      taxRate: (settings.taxRate * 100) || 10,
+      timezone: settings.timezone || 'Asia/Manila',
+      receiptFooter: settings.receiptFooter || 'Thank you for shopping with us!'
+      // Add other settings as needed
+    });
+  }, [settings, reset]);
 
   const tabs = [
     { id: 'store', label: 'Store Info', icon: Store },
@@ -37,11 +51,21 @@ const Settings = () => {
   const handleSaveSettings = async (data) => {
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Update system settings
+      updateSettings({
+        currency: data.currency,
+        taxRate: parseFloat(data.taxRate) / 100, // Convert percentage to decimal
+        timezone: data.timezone,
+        receiptFooter: data.receiptFooter,
+        // Add other settings as needed
+      });
+
+      // Simulate API call for server-side storage if needed
+      await new Promise(resolve => setTimeout(resolve, 500))
       toast.success('Settings saved successfully!')
     } catch (error) {
       toast.error('Failed to save settings')
+      console.error('Error saving settings:', error)
     } finally {
       setLoading(false)
     }
@@ -102,10 +126,11 @@ const Settings = () => {
 
         <div>
           <label className="label">Currency</label>
-          <select {...register('currency')} className="input" defaultValue="USD">
+          <select {...register('currency')} className="input" defaultValue={settings.currency || "PHP"}>
             <option value="USD">USD - US Dollar</option>
             <option value="EUR">EUR - Euro</option>
             <option value="GBP">GBP - British Pound</option>
+            <option value="PHP">PHP - Philippine Peso (₱)</option>
             <option value="CAD">CAD - Canadian Dollar</option>
             <option value="AUD">AUD - Australian Dollar</option>
           </select>
@@ -113,7 +138,8 @@ const Settings = () => {
 
         <div>
           <label className="label">Timezone</label>
-          <select {...register('timezone')} className="input" defaultValue="America/New_York">
+          <select {...register('timezone')} className="input" defaultValue={settings.timezone || "Asia/Manila"}>
+            <option value="Asia/Manila">Philippines (PHT/GMT+8)</option>
             <option value="America/New_York">Eastern Time (EST/EDT)</option>
             <option value="America/Chicago">Central Time (CST/CDT)</option>
             <option value="America/Denver">Mountain Time (MST/MDT)</option>
@@ -141,7 +167,7 @@ const Settings = () => {
             step="0.01"
             {...register('taxRate')}
             className="input"
-            defaultValue="8.25"
+            defaultValue={(settings.taxRate * 100) || 10}
             placeholder="0.00"
           />
         </div>
@@ -151,7 +177,7 @@ const Settings = () => {
           <input
             {...register('receiptFooter')}
             className="input"
-            defaultValue="Thank you for shopping with us!"
+            defaultValue={settings.receiptFooter || "Thank you for shopping with us!"}
             placeholder="Enter receipt footer text"
           />
         </div>

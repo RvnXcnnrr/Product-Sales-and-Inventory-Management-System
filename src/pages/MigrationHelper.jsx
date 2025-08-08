@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Alert from '../components/ui/Alert';
+import { ensureUserInStore, createStoreForUser } from '../utils/store-user-helpers';
 
 const MigrationHelper = () => {
   const [loading, setLoading] = useState(false);
@@ -115,41 +116,30 @@ const MigrationHelper = () => {
         // If user doesn't have a store_id in their profile, use default
         if (!targetStoreId && defaultStore) {
           targetStoreId = defaultStore.id;
-          
-          // Also update their profile with the store_id
-          await supabase
-            .from('profiles')
-            .update({ store_id: targetStoreId })
-            .eq('id', profile.id);
-            
-          addLog(`Updated profile store_id for user: ${profile.email}`);
+          addLog(`Will use default store for user: ${profile.email || profile.id}`);
         }
         
         if (!targetStoreId) {
-          addLog(`Skipping user ${profile.email} - no store_id available`, 'warning');
+          addLog(`Skipping user ${profile.email || profile.id} - no store_id available`, 'warning');
           continue;
         }
 
-        // Add user to store_users
-        const { error: insertError } = await supabase
-          .from('store_users')
-          .insert([{
-            store_id: targetStoreId,
-            user_id: profile.id,
-            role: profile.role || 'staff',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
+        // Use our helper function to add the user to store_users
+        const result = await ensureUserInStore(
+          supabase,
+          profile.id,
+          targetStoreId,
+          profile.role || 'staff'
+        );
 
-        if (insertError) {
-          if (insertError.code === '23505') { // Unique violation
-            addLog(`User ${profile.email} already mapped to store (duplicate error)`, 'warning');
+        if (result.success) {
+          if (result.created) {
+            addLog(`Added user ${profile.email || profile.id} to store`, 'success');
           } else {
-            throw new Error(`Failed to add user ${profile.email} to store: ${insertError.message}`);
+            addLog(`User ${profile.email || profile.id} already mapped to store`, 'info');
           }
         } else {
-          addLog(`Added user ${profile.email} to store`, 'success');
+          addLog(`Failed to add user ${profile.email || profile.id} to store: ${result.message}`, 'error');
         }
       }
 

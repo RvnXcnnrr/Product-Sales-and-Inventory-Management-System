@@ -280,46 +280,62 @@ export const AuthProvider = ({ children }) => {
           
           console.log('✅ Profile created/updated');
           
-          // Create a store if one doesn't exist (for new user registration)
-          const storeName = userData.store_name || userData.storeName;
-          if (storeName) {
-            console.log('🏪 Creating or fetching store for user');
+          // Always create a store for new users (even if no store name provided)
+          const storeName = userData.store_name || userData.storeName || `${profileData.full_name}'s Store`;
+          console.log('🏪 Creating or fetching store for user:', storeName);
+          
+          // First check if the user already has a store
+          const { data: existingStores } = await client
+            .from('stores')
+            .select('id, name')
+            .eq('name', storeName)
+            .limit(1);
             
-            // First check if the user already has a store
-            const { data: existingStores } = await client
+          let storeId;
+          
+          if (existingStores && existingStores.length > 0) {
+            storeId = existingStores[0].id;
+            console.log('✅ Using existing store:', storeId, existingStores[0].name);
+          } else {
+            // Create a new store
+            const storeCode = storeName.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 1000);
+            console.log('🆕 Creating new store with code:', storeCode);
+            
+            const { data: newStore, error: storeError } = await client
               .from('stores')
-              .select('id')
-              .eq('name', storeName)
-              .limit(1);
+              .insert([{
+                name: storeName,
+                code: storeCode,
+                created_at: timestamp,
+                updated_at: timestamp
+              }])
+              .select()
+              .single();
               
-            let storeId;
-            
-            if (existingStores && existingStores.length > 0) {
-              storeId = existingStores[0].id;
-              console.log('✅ Using existing store:', storeId);
-            } else {
-              // Create a new store
-              const { data: newStore, error: storeError } = await client
-                .from('stores')
-                .insert([{
-                  name: storeName,
-                  code: storeName.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 1000),
-                  created_at: timestamp,
-                  updated_at: timestamp
-                }])
-                .select()
-                .single();
-                
-              if (storeError) {
-                console.error('❌ Error creating store:', storeError);
-                throw storeError;
-              }
-              
-              storeId = newStore.id;
-              console.log('✅ Created new store with ID:', storeId);
+            if (storeError) {
+              console.error('❌ Error creating store:', storeError);
+              throw storeError;
             }
             
-            // Now add the user to store_users table
+            storeId = newStore.id;
+            console.log('✅ Created new store with ID:', storeId);
+          }
+          
+          // Now add the user to store_users table - this is critical
+          console.log('👤 Adding user to store_users table...');
+          
+          // First check if the user is already in store_users to avoid duplicates
+          const { data: existingStoreUser } = await client
+            .from('store_users')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .eq('store_id', storeId)
+            .single();
+            
+          if (existingStoreUser) {
+            console.log('ℹ️ User already in store_users table, skipping insertion');
+          } else {
+            // Insert the user into store_users
             const { error: storeUserError } = await client
               .from('store_users')
               .insert([{
@@ -333,16 +349,32 @@ export const AuthProvider = ({ children }) => {
               
             if (storeUserError) {
               console.error('❌ Error adding user to store:', storeUserError);
+              console.error('Error details:', JSON.stringify(storeUserError));
               throw storeUserError;
             }
             
-            // Update the profile with the store_id
-            await client
-              .from('profiles')
-              .update({ store_id: storeId })
-              .eq('id', data.user.id);
-              
             console.log('✅ User added to store_users table');
+          }
+          
+          // Update the profile with the store_id
+          await client
+            .from('profiles')
+            .update({ store_id: storeId })
+            .eq('id', data.user.id);
+            
+          console.log('✅ Profile updated with store_id');
+          
+          // Double-check that the user was added to store_users
+          const { data: verifyStoreUser, error: verifyError } = await client
+            .from('store_users')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .eq('store_id', storeId);
+            
+          if (verifyError || !verifyStoreUser || verifyStoreUser.length === 0) {
+            console.error('⚠️ Verification failed: User may not be in store_users table!', verifyError);
+          } else {
+            console.log('✅ Verified: User is in store_users table', verifyStoreUser);
           }
         } catch (profileError) {
           console.warn('⚠️ Error updating profile or store:', profileError);

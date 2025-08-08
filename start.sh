@@ -4,6 +4,12 @@
 echo "🚀 POS & Inventory Management System - Quick Start"
 echo "================================================="
 
+echo "📢 IMPORTANT: If you're having issues with user accounts:"
+echo "   Navigate to the Migration Helper after login:"
+echo "   http://localhost:5173/migration"
+echo "   This will fix the issue with user accounts not being linked to store_users table."
+echo ""
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js is not installed. Please install Node.js 18+ first."
@@ -79,10 +85,7 @@ echo "   The application will open at http://localhost:3000"
 echo "   Press Ctrl+C to stop the server"
 echo ""
 
-# Demo credentials info
-echo "🔑 Demo Credentials (for testing):"
-echo "   Email: demo@example.com"
-echo "   Password: demo123"
+# Application ready notification
 echo ""
 
 sleep 2
