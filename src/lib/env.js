@@ -3,7 +3,11 @@ export const ENV_CONFIG = {
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL?.trim(),
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY?.trim(),
   APP_NAME: import.meta.env.VITE_APP_NAME || 'POS & Inventory Management',
-  DEV_MODE: import.meta.env.VITE_DEV_MODE !== 'false'
+  DEV_MODE: import.meta.env.VITE_DEV_MODE !== 'false',
+  DEBUG_MODE: import.meta.env.VITE_DEBUG_MODE === 'true',
+  ENABLE_PWA: false, // Explicitly disable PWA to prevent refresh issues
+  ENABLE_OFFLINE_MODE: false, // Explicitly disable offline mode
+  SESSION_TIMEOUT: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000', 10),
 }
 
 if (import.meta.env.DEV) {

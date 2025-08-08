@@ -1,0 +1,19 @@
+@echo off
+echo Fixing auth refresh issues and cleaning up caches...
+
+echo 1. Backing up current AuthContext.jsx...
+copy "src\contexts\AuthContext.jsx" "src\contexts\AuthContext.jsx.backup"
+
+echo 2. Installing improved AuthContext.jsx...
+copy "src\contexts\AuthContext.jsx.new" "src\contexts\AuthContext.jsx"
+
+echo 3. Clearing local storage data...
+echo window.localStorage.clear(); window.sessionStorage.clear(); > clear-storage.js
+
+echo 4. Opening browser with cleared storage...
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --incognito --disable-application-cache --disable-service-worker-fetch-handler "http://localhost:5173"
+
+echo 5. Starting development server...
+npm run dev
+
+echo Done! If issues persist, try restarting your computer.

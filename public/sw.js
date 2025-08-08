@@ -1,24 +1,19 @@
-// Service Worker disabled for development
-console.log('Service Worker disabled for debugging')
+// Service Worker completely disabled to prevent refresh issues
+console.log('Service Worker disabled to fix refresh issues')
 
-// Clear any existing caches
+// This service worker does absolutely nothing but unregister itself
+
 self.addEventListener('install', function(event) {
-  console.log('SW: Install event - clearing caches')
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          console.log('SW: Deleting cache:', cacheName)
-          return caches.delete(cacheName)
-        })
-      )
-    })
-  )
+  console.log('SW: Installing no-op service worker')
   self.skipWaiting()
 })
 
 self.addEventListener('activate', function(event) {
-  console.log('SW: Activate event')
+  console.log('SW: Activating no-op service worker')
+  // Unregister this service worker
+  self.registration.unregister().then(() => {
+    console.log('SW: Unregistered')
+  })
   event.waitUntil(self.clients.claim())
 })
 

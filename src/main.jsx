@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './index.css';
+import './lib/auth-refresh-fix.js'; // Import auth refresh fix
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,11 +24,11 @@ const queryClient = new QueryClient({
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
+  // Temporarily removed StrictMode to prevent double rendering during development
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
             <CartProvider>
               <App />
               <Toaster
@@ -59,5 +60,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
-  </React.StrictMode>
 );

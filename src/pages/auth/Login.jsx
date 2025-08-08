@@ -17,13 +17,26 @@ const Login = () => {
   } = useForm()
 
   const onSubmit = async (data) => {
-    const { error } = await signIn(data.email, data.password)
-    
-    if (error) {
-      setError('root', { 
-        type: 'manual', 
-        message: error.message 
-      })
+    try {
+      // Prevent form submission from causing refreshes
+      const result = await signIn(data.email, data.password)
+      
+      if (result.error) {
+        console.error('Login error:', result.error.message);
+        setError('root', { 
+          type: 'manual', 
+          message: result.error.message 
+        })
+      } else {
+        console.log('Login successful');
+        // Let the auth state handle navigation
+      }
+    } catch (err) {
+      console.error('Exception during login:', err);
+      setError('root', {
+        type: 'manual',
+        message: 'An unexpected error occurred. Please try again.'
+      });
     }
   }
 

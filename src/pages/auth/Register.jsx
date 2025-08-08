@@ -55,14 +55,16 @@ const Register = () => {
         })
       } else {
         console.log('✅ Registration successful!')
-        // Show success message and redirect to login
-        toast.success('Account created successfully!', {
+        // Show success message but don't navigate/reload - let auth state handle it
+        toast.success('Account created successfully! You can now sign in.', {
           duration: 5000
         });
-        // Wait a moment before redirecting to login
+        
+        // Explicitly navigate to login instead of letting auth state handle it
+        // This prevents potential refresh loops
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, 1000);
       }
     } catch (error) {
       console.error('💥 Registration exception:', error)

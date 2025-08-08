@@ -41,74 +41,28 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     
-    <!-- Service Worker Registration - DISABLED FOR DEBUGGING -->
-    <!--
+    <!-- Service Worker cleanup to prevent refresh issues -->
     <script>
+      // Unregister any existing service workers to fix refresh loops
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-              
-              // Check for updates
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // New version available
-                    if (confirm('A new version is available. Reload to update?')) {
-                      newWorker.postMessage({ type: 'SKIP_WAITING' });
-                      window.location.reload();
-                    }
-                  }
-                });
-              });
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-
-        // Listen for SW updates
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            console.log('Unregistering service worker:', registration.scope);
+            registration.unregister();
+          }
+          console.log('All service workers unregistered');
+          
+          // Clear any auth-related storage to prevent refresh issues
+          localStorage.removeItem('supabase.auth.token');
+          localStorage.removeItem('supabase.auth.expires_at');
+          sessionStorage.removeItem('supabase.auth.token');
+          sessionStorage.removeItem('supabase.auth.expires_at');
+          
+          // Remove event listeners that might be causing refresh loops
+          window.removeEventListener('online', () => {});
+          window.removeEventListener('offline', () => {});
         });
       }
-
-      // Install prompt
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show install notification
-        console.log('Install prompt available');
-      });
-
-      window.installApp = async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          console.log(`User response to the install prompt: ${outcome}`);
-          deferredPrompt = null;
-        }
-      };
-
-      // Handle offline/online status
-      window.addEventListener('online', () => {
-        console.log('App is online');
-        localStorage.setItem('lastSync', new Date().toISOString());
-        // Sync any pending offline data
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({ type: 'SYNC_OFFLINE_REQUESTS' });
-        }
-      });
-
-      window.addEventListener('offline', () => {
-        console.log('App is offline');
-      });
-    -->
-    <!-- Service worker disabled for debugging -->
     </script>
   </body>
 </html>

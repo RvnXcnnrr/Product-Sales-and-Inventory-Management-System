@@ -26,10 +26,11 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
   
   if (loading) {
-    return <LoadingSpinner />
+    return <LoadingSpinner text="Checking authentication..." />
   }
   
   if (!user) {
+    console.log('ProtectedRoute: No user, redirecting to login')
     return <Navigate to="/login" replace />
   }
   
@@ -41,10 +42,11 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth()
   
   if (loading) {
-    return <LoadingSpinner />
+    return <LoadingSpinner text="Checking authentication..." />
   }
   
   if (user) {
+    console.log('PublicRoute: User authenticated, redirecting to dashboard')
     return <Navigate to="/dashboard" replace />
   }
   
