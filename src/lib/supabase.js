@@ -39,7 +39,16 @@ let supabase
 const missingEnv = !ENV_CONFIG.SUPABASE_URL || !ENV_CONFIG.SUPABASE_ANON_KEY
 
 if (missingEnv) {
-  console.warn('[supabase] Missing env vars, using mock client')
+  // Hard error if missing envs (no silent fallback)
+  const errMsg = 'Supabase configuration missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local file.'
+  console.error(errMsg)
+  
+  // In dev, throw to make it obvious. In prod, use mock to avoid crashing
+  if (import.meta.env.DEV) {
+    throw new Error(errMsg)
+  }
+  
+  console.warn('[supabase] Using mock client in production (this should not happen)')
   const mock = {
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
@@ -57,6 +66,9 @@ if (missingEnv) {
   }
   supabase = mock
 } else {
+  // Log the actual URL being used (just domain for security)
+  console.log(`[supabase] Connecting to: ${ENV_CONFIG.SUPABASE_URL.split('//')[1]?.split('.')[0]}`)
+  
   supabase = createClient(ENV_CONFIG.SUPABASE_URL, ENV_CONFIG.SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,

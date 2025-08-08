@@ -105,14 +105,14 @@ export const AuthProvider = ({ children }) => {
   const signUp = async (email, password, userData) => {
     try {
       setLoading(true)
-      
       console.log('🔐 AuthContext: Starting signUp with:', { email, userData })
-      
+
       const { data, error } = await client.auth.signUp({
         email,
         password,
         options: {
-          data: userData
+          data: userData, // metadata stored in auth.users.raw_user_meta_data
+          emailRedirectTo: `${window.location.origin}/auth-callback`
         }
       })
 
@@ -121,6 +121,55 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         console.error('❌ AuthContext: signUp error:', error)
         throw error
+      }
+
+      const newUser = data?.user
+      if (newUser) {
+        // Ensure profile row exists / is updated (trigger should insert basic row)
+        try {
+          // Try update first
+            const profileUpdates = {
+              full_name: userData.full_name || userData.fullName || null,
+              role: userData.role || 'owner',
+              // store_name is not a column in schema; ignore if present
+              updated_at: new Date().toISOString()
+            }
+
+            const { error: updateErr } = await client
+              .from('profiles')
+              .update(profileUpdates)
+              .eq('id', newUser.id)
+
+            if (updateErr) {
+              console.warn('Profile update failed, will attempt insert if row missing:', updateErr.message)
+              // Check if row exists
+              const { data: existingProfile, error: selectErr } = await client
+                .from('profiles')
+                .select('id')
+                .eq('id', newUser.id)
+                .single()
+              if (selectErr) {
+                console.warn('Profile select after failed update:', selectErr.message)
+              }
+              if (!existingProfile) {
+                const { error: insertErr } = await client
+                  .from('profiles')
+                  .insert({ id: newUser.id, email, ...profileUpdates })
+                if (insertErr) {
+                  console.warn('Profile insert fallback failed:', insertErr.message)
+                } else {
+                  console.log('✅ Profile inserted fallback')
+                }
+              }
+            } else {
+              console.log('✅ Profile updated')
+            }
+
+          // Refresh local profile state
+          await fetchProfile(newUser.id)
+        } catch (pfErr) {
+          console.warn('Profile post-signup handling error:', pfErr)
+        }
       }
 
       console.log('✅ AuthContext: signUp successful')

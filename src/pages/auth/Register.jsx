@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock, User, Store } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { signUp, loading } = useAuth()
+  const navigate = useNavigate()
   
   const {
     register,
@@ -53,6 +55,14 @@ const Register = () => {
         })
       } else {
         console.log('✅ Registration successful!')
+        // Show success message and redirect to login
+        toast.success('Account created successfully!', {
+          duration: 5000
+        });
+        // Wait a moment before redirecting to login
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error) {
       console.error('💥 Registration exception:', error)
