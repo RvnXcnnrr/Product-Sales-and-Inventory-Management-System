@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext.jsx';
+import { AuthErrorProvider } from './components/ui/AuthErrorModal.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './index.css';
 import './lib/auth-refresh-fix.js'; // Import auth refresh fix
@@ -28,7 +29,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
+        <AuthErrorProvider>
+          <AuthProvider>
             <CartProvider>
               <App />
               <Toaster
@@ -57,7 +59,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               />
             </CartProvider>
           </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        </AuthErrorProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );

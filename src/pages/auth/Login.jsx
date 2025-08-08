@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAuthError } from '../../components/ui/AuthErrorModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const { signIn, loading } = useAuth()
+  const { showError } = useAuthError()
   
   const {
     register,
@@ -23,6 +25,15 @@ const Login = () => {
       
       if (result.error) {
         console.error('Login error:', result.error.message);
+        
+        // Show modal error
+        showError(
+          'Login Failed', 
+          result.error.message,
+          'error'
+        );
+        
+        // Also set form error
         setError('root', { 
           type: 'manual', 
           message: result.error.message 
@@ -33,6 +44,15 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Exception during login:', err);
+      
+      // Show modal error
+      showError(
+        'Login Error',
+        'An unexpected error occurred. Please try again.',
+        'error'
+      );
+      
+      // Also set form error
       setError('root', {
         type: 'manual',
         message: 'An unexpected error occurred. Please try again.'

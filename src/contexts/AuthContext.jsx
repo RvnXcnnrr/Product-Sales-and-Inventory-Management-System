@@ -246,15 +246,16 @@ export const AuthProvider = ({ children }) => {
       
       console.log('✅ Sign up successful');
       
-      // Create/update profile
+      // Create/update profile and store user
       if (data?.user) {
         try {
+          const timestamp = new Date().toISOString();
           const profileData = {
             id: data.user.id,
             email: data.user.email,
             full_name: userData.full_name || userData.fullName || '',
             role: userData.role || 'owner',
-            updated_at: new Date().toISOString()
+            updated_at: timestamp
           };
           
           // Check if profile exists
@@ -278,8 +279,73 @@ export const AuthProvider = ({ children }) => {
           }
           
           console.log('✅ Profile created/updated');
+          
+          // Create a store if one doesn't exist (for new user registration)
+          const storeName = userData.store_name || userData.storeName;
+          if (storeName) {
+            console.log('🏪 Creating or fetching store for user');
+            
+            // First check if the user already has a store
+            const { data: existingStores } = await client
+              .from('stores')
+              .select('id')
+              .eq('name', storeName)
+              .limit(1);
+              
+            let storeId;
+            
+            if (existingStores && existingStores.length > 0) {
+              storeId = existingStores[0].id;
+              console.log('✅ Using existing store:', storeId);
+            } else {
+              // Create a new store
+              const { data: newStore, error: storeError } = await client
+                .from('stores')
+                .insert([{
+                  name: storeName,
+                  code: storeName.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 1000),
+                  created_at: timestamp,
+                  updated_at: timestamp
+                }])
+                .select()
+                .single();
+                
+              if (storeError) {
+                console.error('❌ Error creating store:', storeError);
+                throw storeError;
+              }
+              
+              storeId = newStore.id;
+              console.log('✅ Created new store with ID:', storeId);
+            }
+            
+            // Now add the user to store_users table
+            const { error: storeUserError } = await client
+              .from('store_users')
+              .insert([{
+                store_id: storeId,
+                user_id: data.user.id,
+                role: userData.role || 'owner',
+                is_active: true,
+                created_at: timestamp,
+                updated_at: timestamp
+              }]);
+              
+            if (storeUserError) {
+              console.error('❌ Error adding user to store:', storeUserError);
+              throw storeUserError;
+            }
+            
+            // Update the profile with the store_id
+            await client
+              .from('profiles')
+              .update({ store_id: storeId })
+              .eq('id', data.user.id);
+              
+            console.log('✅ User added to store_users table');
+          }
         } catch (profileError) {
-          console.warn('⚠️ Error updating profile:', profileError);
+          console.warn('⚠️ Error updating profile or store:', profileError);
         }
       }
       

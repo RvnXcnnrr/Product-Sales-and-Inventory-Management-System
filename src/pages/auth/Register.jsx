@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock, User, Store } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAuthError } from '../../components/ui/AuthErrorModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
 
@@ -10,6 +11,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { signUp, loading } = useAuth()
+  const { showError } = useAuthError()
   const navigate = useNavigate()
   
   const {
@@ -27,8 +29,14 @@ const Register = () => {
       setError('confirmPassword', {
         type: 'manual',
         message: 'Passwords do not match'
-      })
-      return
+      });
+      
+      showError(
+        'Registration Error',
+        'Passwords do not match. Please ensure both passwords are identical.',
+        'error'
+      );
+      return;
     }
 
     console.log('🚀 Starting user registration with data:', {
@@ -36,25 +44,35 @@ const Register = () => {
       fullName: data.fullName,
       storeName: data.storeName,
       role: 'owner'
-    })
+    });
 
     try {
       const result = await signUp(data.email, data.password, {
         full_name: data.fullName,
         store_name: data.storeName,
         role: 'owner'
-      })
+      });
       
-      console.log('📊 Registration result:', result)
+      console.log('📊 Registration result:', result);
       
       if (result?.error) {
-        console.error('❌ Registration error:', result.error)
+        console.error('❌ Registration error:', result.error);
+        
+        // Show modal error
+        showError(
+          'Registration Failed',
+          result.error.message || 'Registration failed. Please try again.',
+          'error'
+        );
+        
+        // Also set form error
         setError('root', { 
           type: 'manual', 
           message: result.error.message || 'Registration failed' 
-        })
+        });
       } else {
-        console.log('✅ Registration successful!')
+        console.log('✅ Registration successful!');
+        
         // Show success message but don't navigate/reload - let auth state handle it
         toast.success('Account created successfully! You can now sign in.', {
           duration: 5000
@@ -67,11 +85,20 @@ const Register = () => {
         }, 1000);
       }
     } catch (error) {
-      console.error('💥 Registration exception:', error)
+      console.error('💥 Registration exception:', error);
+      
+      // Show modal error
+      showError(
+        'Registration Error',
+        error.message || 'An unexpected error occurred. Please try again.',
+        'error'
+      );
+      
+      // Also set form error
       setError('root', { 
         type: 'manual', 
         message: 'Registration failed: ' + error.message 
-      })
+      });
     }
   }
 

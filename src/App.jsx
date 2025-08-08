@@ -16,6 +16,7 @@ const Inventory = React.lazy(() => import('./pages/Inventory'))
 const Reports = React.lazy(() => import('./pages/Reports'))
 const Settings = React.lazy(() => import('./pages/Settings'))
 const Profile = React.lazy(() => import('./pages/Profile'))
+const MigrationHelper = React.lazy(() => import('./pages/MigrationHelper'))
 
 // Auth components - import directly to avoid lazy loading issues
 const Register = React.lazy(() => import('./pages/auth/Register'))
@@ -97,6 +98,7 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="migration" element={<MigrationHelper />} />
           </Route>
 
           {/* Catch all route */}
