@@ -60,14 +60,51 @@ Create a `.env` file in the root directory:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_APP_NAME="POS & Inventory Management"
+VITE_APP_VERSION=1.0.0
+VITE_ENABLE_OFFLINE_MODE=true
+VITE_ENABLE_MULTI_STORE=true
+VITE_ENABLE_ANALYTICS=true
+VITE_DEV_MODE=true
+VITE_DEFAULT_CURRENCY=PHP
 ```
 
+## 📦 Database Setup
+
+See [Supabase Setup](docs/setup/SUPABASE_SETUP.md) for complete setup instructions.
+
+## 📚 Documentation
+
+For more detailed documentation:
+
+### Setup & Deployment
+- [Supabase Setup](docs/setup/SUPABASE_SETUP.md)
+- [General Setup](docs/setup/SETUP.md)
+- [Deployment Guide](docs/setup/DEPLOY.md)
+- [Netlify Deployment](docs/setup/NETLIFY_DEPLOY.md)
+- [Supabase Trigger Setup](docs/setup/SUPABASE_TRIGGER_SETUP.md)
+- [Authentication Security](docs/setup/AUTHENTICATION_SECURITY.md)
+
+### Development
+- [User Guide](docs/USER_GUIDE.md)
+- [Developer Guide](docs/DEVELOPER_GUIDE.md)
+- [API Documentation](docs/API_DOCS.md)
+
+### Troubleshooting
+- [Authentication Fixes](docs/troubleshooting/AUTHENTICATION_FIXES.md)
+- [Email Verification](docs/troubleshooting/EMAIL_VERIFICATION_FIX.md)
+- [Auth-Store User Fix](docs/troubleshooting/AUTH_STORE_USER_FIX.md)
 ### 4. Start the Development Server
 
 ```bash
+# On Windows
+./start.bat
+
+# On macOS/Linux
+./start.sh
+
+# Or using npm directly
 npm run dev
-# or
-yarn dev
 ```
 
 ### 5. Authentication & Store Setup
@@ -76,28 +113,7 @@ yarn dev
 > 
 > Navigate to: `http://localhost:5173/migration` after logging in.
 > 
-> This tool fixes user connections to stores. See `AUTH_STORE_USER_FIX.md` for details.
-
-## 📦 Database Setup
-
-See `SUPABASE_SETUP.md` for complete setup instructions.
-
-## 📚 Documentation
-
-For more detailed documentation:
-
-- [User Guide](docs/USER_GUIDE.md)
-- [Developer Guide](docs/DEVELOPER_GUIDE.md)
-- [API Documentation](docs/API_DOCS.md)
-- [Authentication Fix](AUTH_STORE_USER_FIX.md)
-- [Supabase Trigger Setup](SUPABASE_TRIGGER_SETUP.md)
-REACT_APP_SUPABASE_URL=your_supabase_project_url
-REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-REACT_APP_NAME="POS & Inventory Management"
-REACT_APP_VERSION=1.0.0
-REACT_APP_ENABLE_OFFLINE_MODE=true
-REACT_APP_ENABLE_MULTI_STORE=true
-REACT_APP_ENABLE_ANALYTICS=true
+> This tool fixes user connections to stores. See [Authentication Fixes](docs/troubleshooting/AUTHENTICATION_FIXES.md) for details.
 REACT_APP_DEV_MODE=true
 ```
 
@@ -420,15 +436,27 @@ INSERT INTO categories (name, description, store_id) VALUES
 
 ### Project Structure
 
+### Project Structure
+
 ```
-src/
-├── components/           # Reusable UI components
-│   ├── layout/          # Layout components (Header, Sidebar, etc.)
-│   └── ui/              # Basic UI components (Modal, Alert, etc.)
-├── contexts/            # React Context providers
-├── lib/                 # Utility libraries and configurations
-├── pages/               # Main application pages
-└── styles/              # Global styles and Tailwind config
+├── database/            # Database SQL files
+│   └── demo/            # Demo data scripts
+├── docs/                # Documentation
+│   ├── setup/           # Setup and deployment guides
+│   └── troubleshooting/ # Troubleshooting guides
+├── public/              # Static assets
+│   ├── icons/           # Application icons
+│   └── screenshots/     # UI screenshots
+├── scripts/             # Utility scripts
+└── src/                 # Application source code
+    ├── components/      # Reusable UI components
+    │   ├── layout/      # Layout components (Header, Sidebar, etc.)
+    │   └── ui/          # Basic UI components (Modal, Alert, etc.)
+    ├── contexts/        # React Context providers
+    ├── lib/             # Utility libraries and configurations
+    ├── pages/           # Main application pages
+    │   └── auth/        # Authentication pages
+    └── utils/           # Utility functions
 ```
 
 ## 🚀 Deployment
