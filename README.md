@@ -10,7 +10,7 @@ A modern, responsive Point of Sale (POS) and Inventory Management System built w
 - **Product Catalog** - Comprehensive product management
 - **Sales Analytics** - Detailed reporting and insights
 - **User Management** - Role-based access control
-- **Offline Support** - Works without internet connection
+- **Offline Support** - Works without internet connec6tion
 
 ### Technical Features
 - **Responsive Design** - Works on phones, tablets, and desktops
@@ -94,6 +94,16 @@ For more detailed documentation:
 - [Authentication Fixes](docs/troubleshooting/AUTHENTICATION_FIXES.md)
 - [Email Verification](docs/troubleshooting/EMAIL_VERIFICATION_FIX.md)
 - [Auth-Store User Fix](docs/troubleshooting/AUTH_STORE_USER_FIX.md)
+
+## 🧩 Store Settings Persistence
+
+Per-store settings are stored in two places:
+
+- Base: `stores` (currency, tax_rate, timezone, contact info)
+- Extended: `store_settings` (receipt footer, printing, payment method flags, notifications config)
+
+Run the SQL in `database/enhanced-security-policies.sql` to create `store_settings` and its RLS policies. The Settings page will read and write using the current user's `profiles.store_id`.
+
 ### 4. Start the Development Server
 
 ```bash

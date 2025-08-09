@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
+import useSystemSettings from '../utils/systemSettings'
 // import { setOfflineData, getOfflineData } from '../lib/supabase'
 
 // Temporary functions to replace supabase offline functions
@@ -132,6 +133,7 @@ const initialState = {
 
 export const CartProvider = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState)
+  const { settings } = useSystemSettings()
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -145,6 +147,16 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     setOfflineData('cart', cart)
   }, [cart])
+
+  // Initialize/Sync tax rate from system settings (percentage -> internal decimal)
+  useEffect(() => {
+    if (settings && settings.taxRate != null) {
+      // setTaxRate expects percentage value [0..100]
+      const pct = Number(settings.taxRate) * 100
+      const clamped = Math.max(0, Math.min(100, isNaN(pct) ? 0 : pct))
+      dispatch({ type: 'SET_TAX_RATE', payload: clamped / 100 })
+    }
+  }, [settings?.taxRate])
 
   const addItem = (product, quantity = 1, price = null) => {
     if (!product || quantity <= 0) {

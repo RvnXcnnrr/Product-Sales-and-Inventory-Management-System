@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import supabase from '../lib/supabase.js'
 import { onAppEvent } from '../lib/eventBus'
 import useSystemSettings from '../utils/systemSettings'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx'
 
 const Dashboard = () => {
@@ -27,6 +28,7 @@ const Dashboard = () => {
 
   // Currency settings
   const { settings } = useSystemSettings()
+  const { profile } = useAuth()
   const currencyFormatter = useMemo(() => {
     try {
       return new Intl.NumberFormat(undefined, {
@@ -53,6 +55,10 @@ const Dashboard = () => {
       setLoading(true)
       setError(null)
       try {
+        // Ensure base settings are hydrated if needed
+        if (!settings?.currency && profile?.store_id) {
+          await supabase.from('stores').select('currency').eq('id', profile.store_id).single()
+        }
         // Recent transactions with item count (RLS ensures only user-accessible data)
         const { data: tx, error: txErr } = await supabase
           .from('transactions')

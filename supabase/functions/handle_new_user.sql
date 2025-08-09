@@ -7,75 +7,87 @@ DROP FUNCTION IF EXISTS public.handle_new_user CASCADE;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  default_store_id UUID;
-  store_record RECORD;
-  user_role TEXT;
-  timestamp TIMESTAMP;
+  v_store_id UUID;
+  v_existing_store UUID;
+  v_role TEXT;
+  v_now TIMESTAMPTZ := timezone('utc'::text, now());
+  v_store_name TEXT;
+  v_code TEXT;
 BEGIN
-  -- Set timestamp for consistent usage
-  timestamp := NOW();
-  
-  -- Set default role for new users
-  user_role := 'staff';
-  
-  -- Check if the user has specified a role in their metadata
-  IF NEW.raw_user_meta_data->>'role' IS NOT NULL THEN
-    user_role := NEW.raw_user_meta_data->>'role';
+  -- Determine intended role; default new users to 'owner' unless specified otherwise
+  v_role := COALESCE(NEW.raw_user_meta_data->>'role', 'owner');
+  -- Normalize role values to supported set
+  IF lower(v_role) = 'admin' THEN
+    v_role := 'manager';
   END IF;
-  
-  -- First ensure the user has a profile
-  INSERT INTO public.profiles (id, email, full_name, created_at, updated_at, role)
+  IF v_role NOT IN ('owner','manager','staff') THEN
+    v_role := 'owner';
+  END IF;
+
+  -- Ensure a profile exists (idempotent)
+  INSERT INTO public.profiles (id, email, full_name, role, created_at, updated_at)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'fullName', NEW.email),
-    timestamp,
-    timestamp,
-    user_role
+    v_role,
+    v_now,
+    v_now
   )
   ON CONFLICT (id) DO NOTHING;
-  
-  -- Check if the user already has a store
-  -- First try to use store_id from their metadata if available
+
+  -- If user already mapped to a store, make no new store; just ensure profile.store_id is set
+  SELECT su.store_id INTO v_existing_store
+  FROM public.store_users su
+  WHERE su.user_id = NEW.id AND su.is_active = true
+  LIMIT 1;
+
+  IF v_existing_store IS NOT NULL THEN
+    UPDATE public.profiles
+    SET store_id = v_existing_store,
+        updated_at = v_now,
+        role = COALESCE(role, v_role)
+    WHERE id = NEW.id;
+    RETURN NEW;
+  END IF;
+
+  -- If metadata provided a store_id, use it; otherwise create a new store
   IF NEW.raw_user_meta_data->>'store_id' IS NOT NULL THEN
-    default_store_id := NEW.raw_user_meta_data->>'store_id';
+    v_store_id := (NEW.raw_user_meta_data->>'store_id')::uuid;
   ELSE
-    -- If no store_id in metadata, try to find a default store
-    SELECT id INTO default_store_id FROM public.stores LIMIT 1;
-    
-    -- If no store exists, create a default one
-    IF default_store_id IS NULL THEN
-      INSERT INTO public.stores (name, code, created_at, updated_at)
-      VALUES (
-        'Default Store',
-        'DEF' || floor(random() * 1000)::text,
-        timestamp,
-        timestamp
-      )
-      RETURNING id INTO default_store_id;
-    END IF;
+    -- Decide store name from metadata or derived from full_name/email
+    v_store_name := COALESCE(
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'store_name'), ''),
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'storeName'), ''),
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'fullName'), ''),
+      NEW.email
+    );
+
+    -- Generate a simple store code like ABC123
+    v_code := upper(substr(regexp_replace(coalesce(v_store_name, 'My Store'), '[^a-zA-Z0-9]', '', 'g'), 1, 3))
+             || lpad(floor(random()*1000)::int::text, 3, '0');
+
+  INSERT INTO public.stores (name, code, currency, created_at, updated_at)
+  VALUES (v_store_name, v_code, 'PHP', v_now, v_now)
+    RETURNING id INTO v_store_id;
   END IF;
-  
-  -- If we have a store_id, add the user to store_users if not already there
-  IF default_store_id IS NOT NULL THEN
-    -- Update the profile with store_id
-    UPDATE public.profiles 
-    SET store_id = default_store_id
-    WHERE id = NEW.id AND (store_id IS NULL OR store_id <> default_store_id);
-    
-    -- Insert into store_users if not exists
-    INSERT INTO public.store_users (user_id, store_id, role, is_active, created_at, updated_at)
-    VALUES (
-      NEW.id,
-      default_store_id,
-      user_role,
-      TRUE,
-      timestamp,
-      timestamp
-    )
-    ON CONFLICT (user_id, store_id) DO NOTHING;
-  END IF;
-  
+
+  -- Map the user to the store as the intended role (default owner) idempotently
+  INSERT INTO public.store_users (user_id, store_id, role, is_active, created_at, updated_at)
+  VALUES (NEW.id, v_store_id, v_role, TRUE, v_now, v_now)
+  ON CONFLICT (user_id, store_id) DO UPDATE
+    SET role = EXCLUDED.role,
+        is_active = TRUE,
+        updated_at = v_now;
+
+  -- Update profile with store_id and role
+  UPDATE public.profiles 
+  SET store_id = v_store_id,
+      role = v_role,
+      updated_at = v_now
+  WHERE id = NEW.id;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
