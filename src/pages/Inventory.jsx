@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Package, 
   AlertTriangle, 
@@ -16,6 +16,8 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
+import supabase from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -26,6 +28,15 @@ const Inventory = () => {
   const [showHistory, setShowHistory] = useState(false)
   const [pendingAdjustment, setPendingAdjustment] = useState(null)
   const [showConfirmAdjustment, setShowConfirmAdjustment] = useState(false)
+  const { profile, user, loading: authLoading } = useAuth()
+
+  // DB-backed state
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [products, setProducts] = useState([])
+  const [categoryMap, setCategoryMap] = useState(new Map())
+  const [categoriesList, setCategoriesList] = useState(['all'])
+  const [inventoryLogs, setInventoryLogs] = useState([])
 
   const {
     register,
@@ -34,117 +45,87 @@ const Inventory = () => {
     formState: { errors }
   } = useForm()
 
-  // Mock inventory data
-  const [inventory, setInventory] = useState([
-    {
-      id: 1,
-      name: 'iPhone 13 Pro',
-      sku: 'IPH13P-256',
-      category: 'Electronics',
-      current_stock: 15,
-      min_stock_level: 5,
-      max_stock_level: 50,
-      cost_price: 799.99,
-      selling_price: 999.99,
-      total_value: 11999.85,
-      last_updated: '2024-01-25T10:30:00Z',
-      supplier: 'Apple Inc.',
-      location: 'A1-01'
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S22',
-      sku: 'SGS22-128',
-      category: 'Electronics',
-      current_stock: 2,
-      min_stock_level: 3,
-      max_stock_level: 30,
-      cost_price: 549.99,
-      selling_price: 699.99,
-      total_value: 1399.98,
-      last_updated: '2024-01-24T14:15:00Z',
-      supplier: 'Samsung Electronics',
-      location: 'A1-02'
-    },
-    {
-      id: 3,
-      name: 'Nike Air Max',
-      sku: 'NAM-001',
-      category: 'Footwear',
-      current_stock: 25,
-      min_stock_level: 10,
-      max_stock_level: 100,
-      cost_price: 89.99,
-      selling_price: 129.99,
-      total_value: 3249.75,
-      last_updated: '2024-01-23T09:45:00Z',
-      supplier: 'Nike Inc.',
-      location: 'B2-05'
-    },
-    {
-      id: 4,
-      name: 'Coca Cola 500ml',
-      sku: 'CC-500',
-      category: 'Beverages',
-      current_stock: 100,
-      min_stock_level: 50,
-      max_stock_level: 500,
-      cost_price: 1.99,
-      selling_price: 2.99,
-      total_value: 299.00,
-      last_updated: '2024-01-25T16:20:00Z',
-      supplier: 'Coca Cola Company',
-      location: 'C3-10'
-    },
-    {
-      id: 5,
-      name: 'MacBook Air M2',
-      sku: 'MBA-M2-512',
-      category: 'Electronics',
-      current_stock: 0,
-      min_stock_level: 2,
-      max_stock_level: 20,
-      cost_price: 1099.99,
-      selling_price: 1299.99,
-      total_value: 0,
-      last_updated: '2024-01-20T11:30:00Z',
-      supplier: 'Apple Inc.',
-      location: 'A1-03'
-    }
-  ])
+  // Derived inventory view from products
+  const inventory = products.map(p => ({
+    id: p.id,
+    name: p.name,
+    sku: p.sku,
+    category: categoryMap.get(p.category_id) || 'Uncategorized',
+    current_stock: p.stock_quantity,
+    min_stock_level: p.min_stock_level || 0,
+    max_stock_level: p.max_stock_level || 0,
+    cost_price: Number(p.cost_price) || 0,
+    selling_price: Number(p.selling_price) || 0,
+    total_value: (Number(p.stock_quantity) || 0) * (Number(p.cost_price) || 0),
+    last_updated: p.updated_at,
+    supplier: '-',
+    location: '-'
+  }))
 
-  // Mock stock history
-  const stockHistory = [
-    {
-      id: 1,
-      product_name: 'iPhone 13 Pro',
-      type: 'stock_in',
-      quantity: 10,
-      reason: 'Purchase Order #PO-001',
-      user: 'Admin',
-      date: '2024-01-25T10:30:00Z'
-    },
-    {
-      id: 2,
-      product_name: 'Samsung Galaxy S22',
-      type: 'stock_out',
-      quantity: -5,
-      reason: 'Sale Transaction #TXN-123',
-      user: 'Cashier 1',
-      date: '2024-01-24T14:15:00Z'
-    },
-    {
-      id: 3,
-      product_name: 'MacBook Air M2',
-      type: 'stock_out',
-      quantity: -3,
-      reason: 'Sale Transaction #TXN-122',
-      user: 'Cashier 2',
-      date: '2024-01-20T11:30:00Z'
-    }
-  ]
+  useEffect(() => {
+    let isMounted = true
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-  const categories = ['all', ...new Set(inventory.map(item => item.category))]
+        if (!profile?.store_id) {
+          if (isMounted) {
+            setProducts([])
+            setCategoryMap(new Map())
+            setCategoriesList(['all'])
+            setInventoryLogs([])
+          }
+          return
+        }
+
+        const [{ data: prods, error: prodErr }, { data: cats, error: catErr }] = await Promise.all([
+          supabase.from('products')
+            .select('id, name, sku, stock_quantity, min_stock_level, max_stock_level, cost_price, selling_price, category_id, updated_at')
+            .eq('store_id', profile.store_id)
+            .order('updated_at', { ascending: false }),
+          supabase.from('categories')
+            .select('id, name')
+            .eq('store_id', profile.store_id)
+            .order('name')
+        ])
+
+        if (prodErr) throw prodErr
+        if (catErr) throw catErr
+
+        const map = new Map((cats || []).map(c => [c.id, c.name]))
+        if (!isMounted) return
+        setProducts(prods || [])
+        setCategoryMap(map)
+        setCategoriesList(['all', ...Array.from(new Set((prods || []).map(p => map.get(p.category_id)).filter(Boolean)))])
+
+        const { data: logs, error: logErr } = await supabase
+          .from('inventory_logs')
+          .select('id, type, quantity_change, reason, created_at, product:products(name, sku)')
+          .eq('store_id', profile.store_id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+
+        if (logErr) throw logErr
+        setInventoryLogs(logs || [])
+      } catch (e) {
+        console.error(e)
+        setError('Failed to load inventory')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    if (!authLoading) {
+      loadData()
+    } else {
+      setLoading(true)
+    }
+
+    return () => { isMounted = false }
+  }, [authLoading, profile?.store_id])
+
+  const categories = categoriesList
 
   const getStockStatus = (item) => {
     if (item.current_stock === 0) {
@@ -178,25 +159,60 @@ const Inventory = () => {
   const lowStockCount = inventory.filter(item => item.current_stock <= item.min_stock_level).length
   const outOfStockCount = inventory.filter(item => item.current_stock === 0).length
 
-  const applyStockUpdate = (adjustment) => {
-    const updatedInventory = inventory.map(item =>
-      item.id === selectedProduct.id
-        ? {
-            ...item,
-            current_stock: Math.max(0, item.current_stock + adjustment),
-            total_value: (item.current_stock + adjustment) * item.cost_price,
-            last_updated: new Date().toISOString()
-          }
-        : item
-    )
+  const applyStockUpdate = async (adjustment) => {
+    if (!selectedProduct) return
+    try {
+      const productId = selectedProduct.id
+      const prevQty = selectedProduct.current_stock
+      const newQty = Math.max(0, prevQty + adjustment)
 
-    setInventory(updatedInventory)
-    setShowStockUpdate(false)
-    setSelectedProduct(null)
-    reset()
-    
-    const actionType = adjustment > 0 ? 'increased' : 'decreased'
-    toast.success(`Stock ${actionType} successfully!`)
+      // Update product quantity
+      const { error: updErr } = await supabase
+        .from('products')
+        .update({ stock_quantity: newQty })
+        .eq('id', productId)
+        .select()
+
+      if (updErr) throw updErr
+
+      // Insert inventory log
+      const { error: logErr } = await supabase
+        .from('inventory_logs')
+        .insert([{
+          product_id: productId,
+          store_id: profile?.store_id || null,
+          type: adjustment >= 0 ? 'adjustment' : 'adjustment',
+          quantity_change: adjustment,
+          previous_quantity: prevQty,
+          new_quantity: newQty,
+          reason: 'Manual adjustment',
+          reference_type: 'manual',
+          created_by: user?.id || null,
+          notes: ''
+        }])
+
+      if (logErr) throw logErr
+
+      // Refresh products and logs
+      setProducts(products.map(p => p.id === productId ? { ...p, stock_quantity: newQty, updated_at: new Date().toISOString() } : p))
+      setInventoryLogs([{
+        id: Date.now(),
+        type: 'adjustment',
+        quantity_change: adjustment,
+        reason: 'Manual adjustment',
+        created_at: new Date().toISOString(),
+        product: { name: selectedProduct.name, sku: selectedProduct.sku }
+      }, ...inventoryLogs])
+
+      setShowStockUpdate(false)
+      setSelectedProduct(null)
+      reset()
+      const actionType = adjustment > 0 ? 'increased' : 'decreased'
+      toast.success(`Stock ${actionType} successfully!`)
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to update stock')
+    }
   }
 
   const handleStockUpdate = (data) => {
@@ -411,13 +427,13 @@ const Inventory = () => {
           </table>
         </div>
 
-        {filteredInventory.length === 0 && (
+  {filteredInventory.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No inventory found</h3>
             <p className="text-gray-500">Try adjusting your search or filters</p>
           </div>
-        )}
+  )}
       </div>
 
       {/* Stock Update Modal */}
@@ -431,7 +447,7 @@ const Inventory = () => {
         title="Adjust Stock Level"
         size="md"
       >
-        {selectedProduct && (
+  {selectedProduct && (
           <form onSubmit={handleSubmit(handleStockUpdate)} className="p-6 space-y-6">
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-2">{selectedProduct.name}</h3>
@@ -537,35 +553,35 @@ const Inventory = () => {
       >
         <div className="p-6">
           <div className="space-y-4">
-            {stockHistory.map((entry) => (
+            {inventoryLogs.map((entry) => (
               <div key={entry.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-4">
-                  <div className={`p-2 rounded-lg ${entry.type === 'stock_in' ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {entry.type === 'stock_in' ? (
-                      <Plus className={`w-4 h-4 ${entry.type === 'stock_in' ? 'text-green-600' : 'text-red-600'}`} />
+                  <div className={`p-2 rounded-lg ${entry.quantity_change >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {entry.quantity_change >= 0 ? (
+                      <Plus className="w-4 h-4 text-green-600" />
                     ) : (
-                      <Minus className={`w-4 h-4 ${entry.type === 'stock_in' ? 'text-green-600' : 'text-red-600'}`} />
+                      <Minus className="w-4 h-4 text-red-600" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{entry.product_name}</p>
-                    <p className="text-sm text-gray-500">{entry.reason}</p>
-                    <p className="text-sm text-gray-500">by {entry.user}</p>
+                    <p className="font-medium text-gray-900">{entry.product?.name || 'Product'}</p>
+                    <p className="text-sm text-gray-500">{entry.reason || 'Adjustment'}</p>
+                    <p className="text-sm text-gray-500">{entry.quantity_change >= 0 ? 'Increase' : 'Decrease'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {entry.quantity > 0 ? '+' : ''}{entry.quantity}
+                  <p className={`font-medium ${entry.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {entry.quantity_change > 0 ? '+' : ''}{entry.quantity_change}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {new Date(entry.date).toLocaleDateString()}
+                    {new Date(entry.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
             ))}
           </div>
 
-          {stockHistory.length === 0 && (
+          {inventoryLogs.length === 0 && (
             <div className="text-center py-8">
               <History className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No stock movements recorded</p>

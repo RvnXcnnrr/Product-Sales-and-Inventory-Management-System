@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Plus, 
   Search, 
@@ -15,6 +15,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
+import supabase from '../lib/supabase'
 
 const Sales = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -27,78 +28,61 @@ const Sales = () => {
   const [confirmRemoveItemId, setConfirmRemoveItemId] = useState(null)
   
   const { cart, totals, addItem, updateItem, removeItem, clearCart } = useCart()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Mock products data - will be replaced with API calls
-  const [products] = useState([
-    {
-      id: 1,
-      name: 'iPhone 13 Pro',
-      sku: 'IPH13P-256',
-      selling_price: 999.99,
-      stock_quantity: 15,
-      category: 'Electronics',
-      image_url: null,
-      barcode: '123456789012'
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S22',
-      sku: 'SGS22-128',
-      selling_price: 699.99,
-      stock_quantity: 8,
-      category: 'Electronics',
-      image_url: null,
-      barcode: '123456789013'
-    },
-    {
-      id: 3,
-      name: 'Nike Air Max',
-      sku: 'NAM-001',
-      selling_price: 129.99,
-      stock_quantity: 25,
-      category: 'Footwear',
-      image_url: null,
-      barcode: '123456789014'
-    },
-    {
-      id: 4,
-      name: 'Coca Cola 500ml',
-      sku: 'CC-500',
-      selling_price: 2.99,
-      stock_quantity: 100,
-      category: 'Beverages',
-      image_url: null,
-      barcode: '123456789015'
-    },
-    {
-      id: 5,
-      name: 'MacBook Air M2',
-      sku: 'MBA-M2-512',
-      selling_price: 1299.99,
-      stock_quantity: 3,
-      category: 'Electronics',
-      image_url: null,
-      barcode: '123456789016'
-    },
-    {
-      id: 6,
-      name: 'Levi\'s Jeans',
-      sku: 'LJ-501',
-      selling_price: 89.99,
-      stock_quantity: 20,
-      category: 'Clothing',
-      image_url: null,
-      barcode: '123456789017'
+  // Load products and categories from database
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [categoryMap, setCategoryMap] = useState(new Map())
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Fetch products
+        const { data: prodData, error: prodErr } = await supabase
+          .from('products')
+          .select('id, name, sku, barcode, selling_price, stock_quantity, image_url, category_id')
+          .order('name', { ascending: true })
+
+        if (prodErr) throw prodErr
+
+        // Fetch categories to resolve names for filter
+        const { data: catData, error: catErr } = await supabase
+          .from('categories')
+          .select('id, name')
+          .order('name', { ascending: true })
+
+        if (catErr) throw catErr
+
+        if (!isMounted) return
+        setProducts(prodData || [])
+  const catMap = new Map((catData || []).map(c => [c.id, c.name]))
+  setCategoryMap(catMap)
+  const uniqueCats = Array.from(new Set((prodData || []).map(p => catMap.get(p.category_id)).filter(Boolean)))
+  setCategories(['all', ...uniqueCats])
+      } catch (e) {
+        if (!isMounted) return
+        console.error('Failed to load products/categories:', e)
+        setError('Failed to load products')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
-  ])
-
-  const categories = ['all', ...new Set(products.map(p => p.category))]
+    fetchData()
+    return () => { isMounted = false }
+  }, [])
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.barcode.includes(searchTerm)
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
+                         (product.barcode || '').includes(searchTerm)
+    const productCatName = categoryMap.get(product.category_id)
+    const matchesCategory = selectedCategory === 'all' || productCatName === selectedCategory
     return matchesSearch && matchesCategory && product.stock_quantity > 0
   })
 
@@ -194,7 +178,11 @@ const Sales = () => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProducts.map((product) => (
+          {loading ? (
+            <div className="col-span-full py-12"><LoadingSpinner /></div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-600 py-6">{error}</div>
+          ) : filteredProducts.map((product) => (
             <div key={product.id} className="card p-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
                 {product.image_url ? (

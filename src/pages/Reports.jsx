@@ -1,15 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { 
-  BarChart3, 
   TrendingUp, 
   DollarSign, 
-  Calendar,
   Download,
-  Filter,
   Eye,
   ShoppingCart,
-  Package,
-  Users
+  Package
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -25,45 +21,151 @@ import {
   Pie,
   Cell
 } from 'recharts'
+import supabase from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
+import { formatCurrency } from '../utils/format'
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState('7days')
   const [reportType, setReportType] = useState('sales')
+  const { profile, loading: authLoading } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [transactions, setTransactions] = useState([])
+  const [transactionItems, setTransactionItems] = useState([])
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
 
-  // Mock data for charts
-  const salesData = [
-    { name: 'Mon', sales: 1200, transactions: 45 },
-    { name: 'Tue', sales: 1800, transactions: 52 },
-    { name: 'Wed', sales: 2200, transactions: 68 },
-    { name: 'Thu', sales: 1900, transactions: 55 },
-    { name: 'Fri', sales: 2800, transactions: 78 },
-    { name: 'Sat', sales: 3200, transactions: 92 },
-    { name: 'Sun', sales: 2400, transactions: 64 }
-  ]
+  // Load data for selected range
+  useEffect(() => {
+    let isMounted = true
+    const load = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        if (!profile?.store_id) {
+          if (isMounted) {
+            setTransactions([]); setTransactionItems([]); setProducts([]); setCategories([])
+          }
+          return
+        }
 
-  const categoryData = [
-    { name: 'Electronics', value: 45, color: '#3B82F6' },
-    { name: 'Clothing', value: 25, color: '#10B981' },
-    { name: 'Footwear', value: 15, color: '#F59E0B' },
-    { name: 'Beverages', value: 10, color: '#EF4444' },
-    { name: 'Others', value: 5, color: '#8B5CF6' }
-  ]
+        const now = new Date()
+        const from = new Date()
+        if (dateRange === '7days') from.setDate(now.getDate() - 6)
+        else if (dateRange === '30days') from.setDate(now.getDate() - 29)
+        else if (dateRange === '90days') from.setDate(now.getDate() - 89)
+        else if (dateRange === 'year') from.setMonth(0, 1)
 
-  const topProducts = [
-    { id: 1, name: 'iPhone 13 Pro', sales: 45, revenue: 44999.55 },
-    { id: 2, name: 'Samsung Galaxy S22', sales: 32, revenue: 22399.68 },
-    { id: 3, name: 'Nike Air Max', sales: 28, revenue: 3639.72 },
-    { id: 4, name: 'MacBook Air M2', sales: 15, revenue: 19499.85 },
-    { id: 5, name: 'Levi\'s Jeans', sales: 24, revenue: 2159.76 }
-  ]
+        const fromIso = from.toISOString()
 
-  const metrics = {
-    totalSales: 125847.32,
-    totalTransactions: 456,
-    averageTransaction: 275.98,
-    totalProducts: 1234,
-    lowStockItems: 12,
-    topSellingCategory: 'Electronics'
+        const [txRes, itemsRes, prodRes, catRes] = await Promise.all([
+          supabase.from('transactions')
+            .select('id, total_amount, processed_at')
+            .eq('store_id', profile.store_id)
+            .gte('processed_at', fromIso)
+            .order('processed_at', { ascending: true }),
+          supabase.from('transaction_items')
+            .select('id, product_id, quantity, total_price')
+            .in('transaction_id', (
+              supabase.from('transactions')
+                .select('id')
+                .eq('store_id', profile.store_id)
+                .gte('processed_at', fromIso)
+            )),
+          supabase.from('products').select('id, name, category_id').eq('store_id', profile.store_id),
+          supabase.from('categories').select('id, name').eq('store_id', profile.store_id)
+        ])
+
+        if (txRes.error) throw txRes.error
+        if (itemsRes.error) throw itemsRes.error
+        if (prodRes.error) throw prodRes.error
+        if (catRes.error) throw catRes.error
+
+        if (!isMounted) return
+        setTransactions(txRes.data || [])
+        setTransactionItems(itemsRes.data || [])
+        setProducts(prodRes.data || [])
+        setCategories(catRes.data || [])
+      } catch (e) {
+        console.error(e)
+        setError('Failed to load reports')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+    if (!authLoading) load(); else setLoading(true)
+    return () => { isMounted = false }
+  }, [authLoading, profile?.store_id, dateRange])
+
+  const categoryMap = useMemo(() => new Map(categories.map(c => [c.id, c.name])), [categories])
+  const productMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products])
+
+  // Compute metrics
+  const metrics = useMemo(() => {
+    const totalSales = transactions.reduce((s, t) => s + Number(t.total_amount || 0), 0)
+    const totalTransactions = transactions.length
+    const averageTransaction = totalTransactions ? totalSales / totalTransactions : 0
+    const totalProducts = products.length
+    // Low stock requires stock info; use 0 until extended here
+    return { totalSales, totalTransactions, averageTransaction, totalProducts, lowStockItems: 0, topSellingCategory: '' }
+  }, [transactions, products])
+
+  // Sales trend by day
+  const salesData = useMemo(() => {
+    const byDay = new Map()
+    for (const t of transactions) {
+      const d = new Date(t.processed_at)
+      const key = d.toLocaleDateString()
+      const val = byDay.get(key) || { name: key, sales: 0, transactions: 0 }
+      val.sales += Number(t.total_amount || 0)
+      val.transactions += 1
+      byDay.set(key, val)
+    }
+    return Array.from(byDay.values())
+  }, [transactions])
+
+  // Category distribution based on transaction items
+  const categoryAgg = useMemo(() => {
+    const counts = new Map()
+    for (const item of transactionItems) {
+      const prod = productMap.get(item.product_id)
+      if (!prod) continue
+      const catName = categoryMap.get(prod.category_id) || 'Uncategorized'
+      counts.set(catName, (counts.get(catName) || 0) + Number(item.total_price || 0))
+    }
+    const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1
+    const palette = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16']
+    return Array.from(counts.entries()).map(([name, amount], idx) => ({ name, value: Math.round((amount / total) * 100), color: palette[idx % palette.length] }))
+  }, [transactionItems, productMap, categoryMap])
+
+  // Top products by revenue
+  const topProducts = useMemo(() => {
+    const sums = new Map()
+    for (const item of transactionItems) {
+      sums.set(item.product_id, (sums.get(item.product_id) || 0) + Number(item.total_price || 0))
+    }
+    const ranked = Array.from(sums.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([pid, revenue]) => ({ id: pid, name: productMap.get(pid)?.name || 'Product', sales: '-', revenue }))
+    return ranked
+  }, [transactionItems, productMap])
+
+  if (authLoading || loading) {
+    return (
+      <div className="space-y-6">
+        <div className="card p-6">Loading reports…</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="card p-6 text-red-600">{error}</div>
+      </div>
+    )
   }
 
   const getDateRangeLabel = () => {
@@ -126,7 +228,7 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Key Metrics */}
+  {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card p-6">
           <div className="flex items-center">
@@ -135,8 +237,8 @@ const Reports = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Sales</p>
-              <p className="text-2xl font-bold text-gray-900">${metrics.totalSales.toLocaleString()}</p>
-              <p className="text-sm text-green-600">+12.5% from last period</p>
+      <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalSales || 0)}</p>
+      <p className="text-sm text-gray-500">{getDateRangeLabel()}</p>
             </div>
           </div>
         </div>
@@ -161,8 +263,8 @@ const Reports = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg. Transaction</p>
-              <p className="text-2xl font-bold text-gray-900">${metrics.averageTransaction.toFixed(2)}</p>
-              <p className="text-sm text-purple-600">+5.7% from last period</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.averageTransaction || 0)}</p>
+              <p className="text-sm text-gray-500">{getDateRangeLabel()}</p>
             </div>
           </div>
         </div>
@@ -175,7 +277,7 @@ const Reports = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Products</p>
               <p className="text-2xl font-bold text-gray-900">{metrics.totalProducts}</p>
-              <p className="text-sm text-orange-600">{metrics.lowStockItems} low stock</p>
+              <p className="text-sm text-gray-500">{metrics.lowStockItems} low stock</p>
             </div>
           </div>
         </div>
@@ -191,13 +293,13 @@ const Reports = () => {
           </div>
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={salesData}>
+      <LineChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'sales' ? `$${value}` : value,
+        name === 'sales' ? formatCurrency(value) : value,
                     name === 'sales' ? 'Sales' : 'Transactions'
                   ]}
                 />
@@ -223,14 +325,14 @@ const Reports = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={categoryData}
+                  data={categoryAgg}
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}%`}
                 >
-                  {categoryData.map((entry, index) => (
+                  {categoryAgg.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -270,7 +372,7 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {topProducts.map((product, index) => (
+        {topProducts.map((product, index) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="table-cell">
                       <div className="flex items-center">
@@ -281,10 +383,10 @@ const Reports = () => {
                       </div>
                     </td>
                     <td className="table-cell">
-                      <div className="text-sm font-medium">{product.sales} units</div>
+          <div className="text-sm font-medium">—</div>
                     </td>
                     <td className="table-cell">
-                      <div className="text-sm font-medium">${product.revenue.toFixed(2)}</div>
+          <div className="text-sm font-medium">{formatCurrency(product.revenue || 0)}</div>
                     </td>
                   </tr>
                 ))}
@@ -300,45 +402,19 @@ const Reports = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-4 h-4 text-green-600" />
+              {([...transactions]
+                .sort((a, b) => new Date(b.processed_at) - new Date(a.processed_at))
+                .slice(0, 4)).map((t) => (
+                <div key={t.id} className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <ShoppingCart className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">Sale completed</p>
+                    <p className="text-xs text-gray-500">{formatCurrency(Number(t.total_amount || 0))} • {new Date(t.processed_at).toLocaleString()}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">Sale completed</p>
-                  <p className="text-xs text-gray-500">$299.99 • 2 minutes ago</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Package className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">Stock updated</p>
-                  <p className="text-xs text-gray-500">iPhone 13 Pro restocked • 1 hour ago</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">Low stock alert</p>
-                  <p className="text-xs text-gray-500">Samsung Galaxy S22 • 3 hours ago</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">New customer</p>
-                  <p className="text-xs text-gray-500">John Doe registered • 5 hours ago</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -352,14 +428,14 @@ const Reports = () => {
         </div>
         <div className="p-6">
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={salesData}>
+    <BarChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis yAxisId="left" />
               <YAxis yAxisId="right" orientation="right" />
               <Tooltip 
                 formatter={(value, name) => [
-                  name === 'sales' ? `$${value}` : value,
+      name === 'sales' ? formatCurrency(value) : value,
                   name === 'sales' ? 'Sales' : 'Transactions'
                 ]}
               />

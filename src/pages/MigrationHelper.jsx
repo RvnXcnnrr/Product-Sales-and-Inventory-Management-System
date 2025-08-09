@@ -1,9 +1,9 @@
 // Migration helper to set up store_users table and apply security rules
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Alert from '../components/ui/Alert';
-import { ensureUserInStore, createStoreForUser } from '../utils/store-user-helpers';
+import { ensureUserInStore } from '../utils/store-user-helpers';
 
 const MigrationHelper = () => {
   const [loading, setLoading] = useState(false);
@@ -163,7 +163,7 @@ const MigrationHelper = () => {
       <div className="mb-6">
         <p className="mb-2">
           This utility will ensure all users are properly added to the store_users table.
-          This fixes the issue where users can authenticate but aren't associated with a store.
+          This fixes the issue where users can authenticate but aren&apos;t associated with a store.
         </p>
       </div>
 

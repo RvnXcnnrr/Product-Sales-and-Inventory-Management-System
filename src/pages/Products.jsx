@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Plus, 
   Search, 
@@ -13,7 +13,9 @@ import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import supabase from '../lib/supabase'
 import { formatCurrency } from '../utils/format'
+import { useAuth } from '../contexts/AuthContext'
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,102 +24,70 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const { profile, loading: authLoading } = useAuth()
 
-  // Mock products data
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'iPhone 13 Pro',
-      sku: 'IPH13P-256',
-      barcode: '123456789012',
-      category: 'Electronics',
-      description: 'Latest iPhone with ProRAW camera and A15 Bionic chip',
-      cost_price: 799.99,
-      selling_price: 999.99,
-      stock_quantity: 15,
-      min_stock_level: 5,
-      image_url: null,
-      created_at: '2024-01-15T10:30:00Z',
-      updated_at: '2024-01-20T14:45:00Z'
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S22',
-      sku: 'SGS22-128',
-      barcode: '123456789013',
-      category: 'Electronics',
-      description: 'Premium Android smartphone with advanced camera system',
-      cost_price: 549.99,
-      selling_price: 699.99,
-      stock_quantity: 8,
-      min_stock_level: 3,
-      image_url: null,
-      created_at: '2024-01-10T09:15:00Z',
-      updated_at: '2024-01-18T16:20:00Z'
-    },
-    {
-      id: 3,
-      name: 'Nike Air Max',
-      sku: 'NAM-001',
-      barcode: '123456789014',
-      category: 'Footwear',
-      description: 'Comfortable running shoes with Air Max technology',
-      cost_price: 89.99,
-      selling_price: 129.99,
-      stock_quantity: 25,
-      min_stock_level: 10,
-      image_url: null,
-      created_at: '2024-01-12T11:00:00Z',
-      updated_at: '2024-01-22T13:30:00Z'
-    },
-    {
-      id: 4,
-      name: 'Coca Cola 500ml',
-      sku: 'CC-500',
-      barcode: '123456789015',
-      category: 'Beverages',
-      description: 'Classic Coca Cola in 500ml bottle',
-      cost_price: 1.99,
-      selling_price: 2.99,
-      stock_quantity: 100,
-      min_stock_level: 50,
-      image_url: null,
-      created_at: '2024-01-08T08:45:00Z',
-      updated_at: '2024-01-25T12:15:00Z'
-    },
-    {
-      id: 5,
-      name: 'MacBook Air M2',
-      sku: 'MBA-M2-512',
-      barcode: '123456789016',
-      category: 'Electronics',
-      description: 'Ultra-thin laptop with M2 chip and 512GB storage',
-      cost_price: 1099.99,
-      selling_price: 1299.99,
-      stock_quantity: 3,
-      min_stock_level: 2,
-      image_url: null,
-      created_at: '2024-01-20T15:20:00Z',
-      updated_at: '2024-01-24T10:40:00Z'
-    },
-    {
-      id: 6,
-      name: 'Levi\'s Jeans',
-      sku: 'LJ-501',
-      barcode: '123456789017',
-      category: 'Clothing',
-      description: 'Classic 501 original fit jeans in blue denim',
-      cost_price: 59.99,
-      selling_price: 89.99,
-      stock_quantity: 20,
-      min_stock_level: 8,
-      image_url: null,
-      created_at: '2024-01-14T14:10:00Z',
-      updated_at: '2024-01-21T17:25:00Z'
+  // Products from database
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const [categories, setCategories] = useState(['all'])
+  const [categoryMap, setCategoryMap] = useState(new Map())
+  const [categoriesData, setCategoriesData] = useState([])
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        if (!profile?.store_id) {
+          if (isMounted) {
+            setProducts([])
+            setCategories(['all'])
+            setCategoriesData([])
+          }
+          return
+        }
+
+        const { data: prodData, error: prodErr } = await supabase
+          .from('products')
+          .select('id, name, sku, barcode, description, cost_price, selling_price, stock_quantity, min_stock_level, image_url, category_id, created_at, updated_at')
+          .eq('store_id', profile.store_id)
+          .order('updated_at', { ascending: false })
+
+        if (prodErr) throw prodErr
+
+        const { data: catData, error: catErr } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('store_id', profile.store_id)
+          .order('name')
+
+        if (catErr) throw catErr
+
+        if (!isMounted) return
+        setProducts(prodData || [])
+        const map = new Map((catData || []).map(c => [c.id, c.name]))
+        setCategoryMap(map)
+        setCategoriesData(catData || [])
+        setCategories(['all', ...Array.from(new Set((prodData || []).map(p => map.get(p.category_id)).filter(Boolean)))])
+      } catch (e) {
+        if (!isMounted) return
+        console.error('Failed to load products:', e)
+        setError('Failed to load products')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
-  ])
-
-  const categories = ['all', ...new Set(products.map(p => p.category))]
+    if (!authLoading) {
+      fetchData()
+    } else {
+      setLoading(true)
+    }
+    return () => { isMounted = false }
+  }, [authLoading, profile?.store_id])
 
   const {
     register,
@@ -129,48 +99,61 @@ const Products = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.barcode.includes(searchTerm)
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
+                         (product.barcode || '').includes(searchTerm)
+    const productCatName = categoryMap.get(product.category_id)
+    const matchesCategory = selectedCategory === 'all' || productCatName === selectedCategory
     return matchesSearch && matchesCategory
   })
 
-  const handleAddProduct = (data) => {
-    const newProduct = {
-      id: Date.now(),
-      ...data,
-      cost_price: parseFloat(data.cost_price),
-      selling_price: parseFloat(data.selling_price),
-      stock_quantity: parseInt(data.stock_quantity),
-      min_stock_level: parseInt(data.min_stock_level),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+  const handleAddProduct = async (data) => {
+    try {
+      const payload = {
+        ...data,
+        cost_price: parseFloat(data.cost_price),
+        selling_price: parseFloat(data.selling_price),
+        stock_quantity: parseInt(data.stock_quantity),
+        min_stock_level: parseInt(data.min_stock_level),
+        store_id: profile?.store_id || null
+      }
+      const { data: inserted, error } = await supabase
+        .from('products')
+        .insert([payload])
+        .select()
+      if (error) throw error
+      setProducts([...(inserted || []), ...products])
+      setShowAddProduct(false)
+      reset()
+      toast.success('Product added successfully!')
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to add product')
     }
-
-    setProducts([...products, newProduct])
-    setShowAddProduct(false)
-    reset()
-    toast.success('Product added successfully!')
   }
 
-  const handleEditProduct = (data) => {
-    const updatedProducts = products.map(product =>
-      product.id === editingProduct.id
-        ? {
-            ...product,
-            ...data,
-            cost_price: parseFloat(data.cost_price),
-            selling_price: parseFloat(data.selling_price),
-            stock_quantity: parseInt(data.stock_quantity),
-            min_stock_level: parseInt(data.min_stock_level),
-            updated_at: new Date().toISOString()
-          }
-        : product
-    )
-
-    setProducts(updatedProducts)
-    setEditingProduct(null)
-    reset()
-    toast.success('Product updated successfully!')
+  const handleEditProduct = async (data) => {
+    try {
+      const payload = {
+        ...data,
+        cost_price: parseFloat(data.cost_price),
+        selling_price: parseFloat(data.selling_price),
+        stock_quantity: parseInt(data.stock_quantity),
+        min_stock_level: parseInt(data.min_stock_level)
+      }
+      const { data: updated, error } = await supabase
+        .from('products')
+        .update(payload)
+        .eq('id', editingProduct.id)
+        .select()
+      if (error) throw error
+      const updatedProducts = products.map(p => p.id === editingProduct.id ? updated[0] : p)
+      setProducts(updatedProducts)
+      setEditingProduct(null)
+      reset()
+      toast.success('Product updated successfully!')
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to update product')
+    }
   }
 
   const handleDeleteProduct = (productId) => {
@@ -179,9 +162,18 @@ const Products = () => {
 
   const confirmDelete = () => {
     if (confirmDeleteId == null) return
-    setProducts(products.filter(product => product.id !== confirmDeleteId))
+    // Delete in DB then update state
+    supabase.from('products').delete().eq('id', confirmDeleteId)
+      .then(({ error }) => {
+        if (error) {
+          console.error(error)
+          toast.error('Failed to delete product')
+        } else {
+          setProducts(products.filter(product => product.id !== confirmDeleteId))
+          toast.success('Product deleted successfully!')
+        }
+      })
     setConfirmDeleteId(null)
-    toast.success('Product deleted successfully!')
   }
 
   const getStockStatus = (product) => {
@@ -231,21 +223,16 @@ const Products = () => {
         <div>
           <label className="label">Category *</label>
           <select
-            {...register('category', { required: 'Category is required' })}
+            {...register('category_id', { required: 'Category is required' })}
             className="input"
-            defaultValue={product?.category}
+            defaultValue={product?.category_id || ''}
           >
             <option value="">Select category</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Clothing">Clothing</option>
-            <option value="Footwear">Footwear</option>
-            <option value="Beverages">Beverages</option>
-            <option value="Food">Food</option>
-            <option value="Books">Books</option>
-            <option value="Home & Garden">Home & Garden</option>
-            <option value="Sports">Sports</option>
+            {categoriesData.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
           </select>
-          {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category.message}</p>}
+          {errors.category_id && <p className="text-sm text-red-600 mt-1">{errors.category_id.message}</p>}
         </div>
 
         <div>
@@ -416,7 +403,11 @@ const Products = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredProducts.map((product) => {
+              {loading ? (
+                <tr><td className="table-cell p-6" colSpan="7">Loading...</td></tr>
+              ) : error ? (
+                <tr><td className="table-cell p-6 text-red-600" colSpan="7">{error}</td></tr>
+              ) : filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product)
                 return (
                   <tr key={product.id} className="hover:bg-gray-50">
@@ -445,7 +436,7 @@ const Products = () => {
                       <div className="text-sm font-mono">{product.sku}</div>
                     </td>
                     <td className="table-cell">
-                      <span className="badge badge-info">{product.category}</span>
+                      <span className="badge badge-info">{categoryMap.get(product.category_id) || 'Uncategorized'}</span>
                     </td>
                     <td className="table-cell">
                       <div className="text-sm">
@@ -500,7 +491,7 @@ const Products = () => {
           </table>
         </div>
 
-        {filteredProducts.length === 0 && (
+  {filteredProducts.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
@@ -571,7 +562,7 @@ const Products = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">{viewingProduct.name}</h3>
-                <p className="text-gray-500">{viewingProduct.category}</p>
+                <p className="text-gray-500">{categoryMap.get(viewingProduct.category_id) || 'Uncategorized'}</p>
               </div>
             </div>
 
@@ -586,11 +577,11 @@ const Products = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Cost Price</label>
-                <p>${viewingProduct.cost_price.toFixed(2)}</p>
+                <p>{formatCurrency(viewingProduct.cost_price)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Selling Price</label>
-                <p className="font-semibold">${viewingProduct.selling_price.toFixed(2)}</p>
+                <p className="font-semibold">{formatCurrency(viewingProduct.selling_price)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Stock Quantity</label>

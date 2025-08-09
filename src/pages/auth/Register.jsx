@@ -5,11 +5,15 @@ import { Eye, EyeOff, Mail, Lock, User, Store } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAuthError } from '../../components/ui/AuthErrorModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import Modal from '../../components/ui/Modal'
+import Alert from '../../components/ui/Alert'
 import toast from 'react-hot-toast'
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState('')
   const { signUp, loading } = useAuth()
   const { showError } = useAuthError()
   const navigate = useNavigate()
@@ -71,18 +75,16 @@ const Register = () => {
           message: result.error.message || 'Registration failed' 
         });
       } else {
-        console.log('✅ Registration successful!');
+        console.log('✅ Registration successful!')
         
-        // Show success message but don't navigate/reload - let auth state handle it
-        toast.success('Account created successfully! You can now sign in.', {
+        // Inform user to verify email before logging in
+        const emailToShow = result?.data?.user?.email || data.email
+        setRegisteredEmail(emailToShow)
+        setShowVerifyModal(true)
+        
+        toast.success('Account created! Please check your email to verify your account.', {
           duration: 5000
-        });
-        
-        // Explicitly navigate to login instead of letting auth state handle it
-        // This prevents potential refresh loops
-        setTimeout(() => {
-          navigate('/login');
-        }, 1000);
+        })
       }
     } catch (error) {
       console.error('💥 Registration exception:', error);
@@ -311,6 +313,29 @@ const Register = () => {
           </Link>
         </p>
       </div>
+
+      {/* Post-signup verification modal */}
+      <Modal
+        isOpen={showVerifyModal}
+        onClose={() => { setShowVerifyModal(false); navigate('/login') }}
+        title="Verify your email"
+        size="md"
+      >
+        <div className="p-6 space-y-5">
+          <Alert
+            type="info"
+            message={`We've sent a verification link to ${registeredEmail || 'your email address'}. Please confirm your email to be able to log in.`}
+          />
+          <div className="flex justify-end">
+            <button
+              className="btn btn-primary"
+              onClick={() => { setShowVerifyModal(false); navigate('/login') }}
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

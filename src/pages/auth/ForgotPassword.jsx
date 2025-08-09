@@ -38,14 +38,14 @@ const ForgotPassword = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Check your email</h2>
           <p className="mt-2 text-sm text-gray-600">
-            We've sent a password reset link to your email address.
+            We&apos;ve sent a password reset link to your email address.
             Please check your inbox and follow the instructions.
           </p>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-700">
-            <strong>Didn't receive the email?</strong> Check your spam folder or{' '}
+            <strong>Didn&apos;t receive the email?</strong> Check your spam folder or{' '}
             <button
               onClick={() => setIsSubmitted(false)}
               className="text-blue-600 hover:text-blue-500 underline"
@@ -71,7 +71,7 @@ const ForgotPassword = () => {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Reset your password</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Enter your email address and we'll send you a link to reset your password.
+          Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 
