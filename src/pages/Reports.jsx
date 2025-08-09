@@ -22,6 +22,7 @@ import {
   Cell
 } from 'recharts'
 import supabase from '../lib/supabase'
+import { onAppEvent } from '../lib/eventBus'
 import { useAuth } from '../contexts/AuthContext'
 import { formatCurrency } from '../utils/format'
 
@@ -59,20 +60,22 @@ const Reports = () => {
 
         const fromIso = from.toISOString()
 
-        const [txRes, itemsRes, prodRes, catRes] = await Promise.all([
-          supabase.from('transactions')
-            .select('id, total_amount, processed_at')
-            .eq('store_id', profile.store_id)
-            .gte('processed_at', fromIso)
-            .order('processed_at', { ascending: true }),
-          supabase.from('transaction_items')
-            .select('id, product_id, quantity, total_price')
-            .in('transaction_id', (
-              supabase.from('transactions')
-                .select('id')
-                .eq('store_id', profile.store_id)
-                .gte('processed_at', fromIso)
-            )),
+        const txRes = await supabase
+          .from('transactions')
+          .select('id, total_amount, processed_at')
+          .eq('store_id', profile.store_id)
+          .gte('processed_at', fromIso)
+          .order('processed_at', { ascending: true })
+
+        if (txRes.error) throw txRes.error
+        const txIds = (txRes.data || []).map(t => t.id)
+
+        const [itemsRes, prodRes, catRes] = await Promise.all([
+          txIds.length > 0
+            ? supabase.from('transaction_items')
+                .select('id, product_id, quantity, total_price')
+                .in('transaction_id', txIds)
+            : Promise.resolve({ data: [], error: null }),
           supabase.from('products').select('id, name, category_id').eq('store_id', profile.store_id),
           supabase.from('categories').select('id, name').eq('store_id', profile.store_id)
         ])
@@ -95,7 +98,8 @@ const Reports = () => {
       }
     }
     if (!authLoading) load(); else setLoading(true)
-    return () => { isMounted = false }
+    const unsubscribe = onAppEvent('transaction:completed', () => load())
+    return () => { isMounted = false; unsubscribe && unsubscribe() }
   }, [authLoading, profile?.store_id, dateRange])
 
   const categoryMap = useMemo(() => new Map(categories.map(c => [c.id, c.name])), [categories])

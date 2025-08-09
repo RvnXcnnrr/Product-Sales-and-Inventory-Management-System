@@ -103,34 +103,47 @@ export const createStoreForUser = async (supabase, userId, storeName, role = 'ow
     const timestamp = new Date().toISOString();
     const storeCode = storeName.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 1000);
     
-    // Create the store
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .insert([{
-        name: storeName,
-        code: storeCode,
-        created_at: timestamp,
-        updated_at: timestamp
-      }])
-      .select()
-      .single();
+    // Prefer RPC to bypass RLS on stores safely
+    let storeId;
+    try {
+      const { data: rpcId, error: rpcErr } = await supabase.rpc('create_store_for_current_user', {
+        p_store_name: storeName,
+        p_role: role
+      });
+      if (rpcErr) throw rpcErr;
+      storeId = rpcId;
+    } catch (rpcError) {
+      console.warn('RPC create_store_for_current_user failed, falling back to direct insert:', rpcError);
+      // Fallback direct insert (requires RLS policy + grants)
+      const { data: store, error: storeError } = await supabase
+        .from('stores')
+        .insert([{
+          name: storeName,
+          code: storeCode,
+          created_at: timestamp,
+          updated_at: timestamp
+        }])
+        .select()
+        .single();
       
-    if (storeError) {
-      console.error('Error creating store:', storeError);
-      return { 
-        success: false, 
-        error: storeError,
-        message: `Failed to create store: ${storeError.message}`
-      };
+      if (storeError) {
+        console.error('Error creating store:', storeError);
+        return { 
+          success: false, 
+          error: storeError,
+          message: `Failed to create store: ${storeError.message}`
+        };
+      }
+      storeId = store.id;
     }
     
     // Connect user to the new store
-    const result = await ensureUserInStore(supabase, userId, store.id, role);
+    const result = await ensureUserInStore(supabase, userId, storeId, role);
     
     return {
       ...result,
-      store,
-      storeId: store.id
+      store: result.success ? { id: storeId, name: storeName } : null,
+      storeId
     };
   } catch (error) {
     console.error('Exception in createStoreForUser:', error);

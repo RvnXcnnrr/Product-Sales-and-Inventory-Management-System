@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import supabase from '../lib/supabase.js'
+import { onAppEvent } from '../lib/eventBus'
 import useSystemSettings from '../utils/systemSettings'
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx'
 
@@ -127,8 +128,10 @@ const Dashboard = () => {
       }
     }
 
-    load()
-    return () => { isMounted = false }
+  load()
+  // Refresh when a sale completes
+  const unsubscribe = onAppEvent('transaction:completed', () => load())
+  return () => { isMounted = false; unsubscribe && unsubscribe() }
   }, [startOfTodayISO])
 
   const stats = useMemo(() => ([

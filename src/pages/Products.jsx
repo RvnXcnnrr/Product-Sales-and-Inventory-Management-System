@@ -16,6 +16,8 @@ import toast from 'react-hot-toast'
 import supabase from '../lib/supabase'
 import { formatCurrency } from '../utils/format'
 import { useAuth } from '../contexts/AuthContext'
+import { onAppEvent } from '../lib/eventBus'
+import { createStoreForUser } from '../utils/store-user-helpers'
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -86,7 +88,8 @@ const Products = () => {
     } else {
       setLoading(true)
     }
-    return () => { isMounted = false }
+    const unsubscribe = onAppEvent('transaction:completed', () => fetchData())
+    return () => { isMounted = false; unsubscribe && unsubscribe() }
   }, [authLoading, profile?.store_id])
 
   const {
@@ -127,9 +130,20 @@ const Products = () => {
         if (suErr && suErr.code !== 'PGRST116') throw suErr
         if (su?.store_id) targetStoreId = su.store_id
       }
+      // If still no store, auto-create one and mapping for the user
       if (!targetStoreId) {
-        toast.error('No store mapping found for your account')
-        return
+        if (!profile?.id) {
+          toast.error('You must be signed in')
+          return
+        }
+        const storeName = (profile.full_name || profile.email || 'My Store').toString().split('@')[0] + "'s Store"
+        const creating = await createStoreForUser(supabase, profile.id, storeName, 'owner')
+        if (!creating.success || !creating.storeId) {
+          console.error('Auto-create store failed:', creating.error || creating.message)
+          toast.error('Could not create a store for your account')
+          return
+        }
+        targetStoreId = creating.storeId
       }
       const name = window.prompt('Enter new category name')
       if (!name || !name.trim()) return
@@ -166,9 +180,32 @@ const Products = () => {
 
   const handleAddProduct = async (data) => {
     try {
-      if (!profile?.store_id) {
-        toast.error('No store selected')
-        return
+      let currentStoreId = profile?.store_id || null
+      if (!currentStoreId && profile?.id) {
+        const { data: su, error: suErr } = await supabase
+          .from('store_users')
+          .select('store_id')
+          .eq('user_id', profile.id)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+        if (suErr && suErr.code !== 'PGRST116') throw suErr
+        if (su?.store_id) currentStoreId = su.store_id
+      }
+      // If still missing, auto-create a store and mapping
+      if (!currentStoreId) {
+        if (!profile?.id) {
+          toast.error('You must be signed in')
+          return
+        }
+        const storeName = (profile.full_name || profile.email || 'My Store').toString().split('@')[0] + "'s Store"
+        const creating = await createStoreForUser(supabase, profile.id, storeName, 'owner')
+        if (!creating.success || !creating.storeId) {
+          console.error('Auto-create store failed:', creating.error || creating.message)
+          toast.error('Could not create a store for your account')
+          return
+        }
+        currentStoreId = creating.storeId
       }
       // Normalize and auto-generate SKU if empty
       let sku = (data.sku || '').trim()
@@ -180,7 +217,7 @@ const Products = () => {
       const { data: existingSku, error: skuErr } = await supabase
         .from('products')
         .select('id')
-        .eq('store_id', profile.store_id)
+  .eq('store_id', currentStoreId)
         .eq('sku', sku)
         .maybeSingle()
       if (skuErr && skuErr.code !== 'PGRST116') {
@@ -199,7 +236,7 @@ const Products = () => {
         selling_price: parseFloat(data.selling_price),
         stock_quantity: parseInt(data.stock_quantity),
         min_stock_level: parseInt(data.min_stock_level),
-        store_id: profile?.store_id || null
+  store_id: currentStoreId
       }
       const { data: inserted, error } = await supabase
         .from('products')
@@ -219,7 +256,7 @@ const Products = () => {
         try {
           await supabase.from('inventory_logs').insert([{
             product_id: created.id,
-            store_id: profile.store_id,
+            store_id: currentStoreId,
             type: 'stock_in',
             quantity_change: payload.stock_quantity,
             previous_quantity: 0,

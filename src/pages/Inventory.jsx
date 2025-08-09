@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
 import supabase from '../lib/supabase'
+import { onAppEvent } from '../lib/eventBus'
 import { useAuth } from '../contexts/AuthContext'
 
 const Inventory = () => {
@@ -122,7 +123,8 @@ const Inventory = () => {
       setLoading(true)
     }
 
-    return () => { isMounted = false }
+    const unsubscribe = onAppEvent('transaction:completed', () => loadData())
+    return () => { isMounted = false; unsubscribe && unsubscribe() }
   }, [authLoading, profile?.store_id])
 
   const categories = categoriesList

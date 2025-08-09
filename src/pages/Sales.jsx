@@ -16,8 +16,11 @@ import LoadingSpinner from '../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
 import supabase from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
+import { dispatchAppEvent } from '../lib/eventBus'
 
 const Sales = () => {
+  const { profile, user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showCheckout, setShowCheckout] = useState(false)
@@ -111,23 +114,96 @@ const Sales = () => {
     setProcessing(true)
     
     try {
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Here you would make an API call to process the transaction
-      console.log('Processing transaction:', {
-        items: cart.items,
-        totals,
-        paymentMethod,
-        amountReceived: paymentMethod === 'cash' ? parseFloat(amountReceived) : totals.total
-      })
-      
+      if (!profile?.store_id || !user?.id) {
+        toast.error('Missing store or user context')
+        return
+      }
+
+      // Create transaction
+      const now = new Date()
+      const txNumber = `TX-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}-${now.getTime().toString().slice(-6)}`
+      const { data: tx, error: txErr } = await supabase
+        .from('transactions')
+        .insert([{
+          transaction_number: txNumber,
+          store_id: profile.store_id,
+          customer_name: cart.customer?.name || null,
+          subtotal: totals.subtotal,
+          discount_percentage: totals.discount,
+          discount_amount: totals.discountAmount,
+          tax_rate: totals.taxRate / 100, // store decimal
+          tax_amount: totals.taxAmount,
+          total_amount: totals.total,
+          payment_method: paymentMethod,
+          amount_received: paymentMethod === 'cash' ? parseFloat(amountReceived) : totals.total,
+          change_amount: paymentMethod === 'cash' ? Math.max(0, parseFloat(amountReceived) - totals.total) : 0,
+          status: 'completed',
+          processed_by: user.id,
+          processed_at: now.toISOString(),
+        }])
+        .select()
+        .single()
+
+      if (txErr) throw txErr
+
+      // Insert transaction items and update inventory per item
+      const itemsPayload = cart.items.map(item => ({
+        transaction_id: tx.id,
+        product_id: item.product_id,
+        product_name: item.name,
+        product_sku: item.sku,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+      }))
+
+      const { error: itemsErr } = await supabase
+        .from('transaction_items')
+        .insert(itemsPayload)
+      if (itemsErr) throw itemsErr
+
+      // Decrease stock for each product and log inventory change
+      for (const item of cart.items) {
+        const { data: prod, error: prodErr } = await supabase
+          .from('products')
+          .select('id, stock_quantity')
+          .eq('id', item.product_id)
+          .single()
+        if (prodErr) throw prodErr
+        const prevQty = Number(prod.stock_quantity || 0)
+        const newQty = Math.max(0, prevQty - item.quantity)
+        const { error: updErr } = await supabase
+          .from('products')
+          .update({ stock_quantity: newQty, updated_at: new Date().toISOString() })
+          .eq('id', item.product_id)
+        if (updErr) throw updErr
+        await supabase
+          .from('inventory_logs')
+          .insert([{
+            product_id: item.product_id,
+            store_id: profile.store_id,
+            type: 'stock_out',
+            quantity_change: -item.quantity,
+            previous_quantity: prevQty,
+            new_quantity: newQty,
+            reason: 'Sale transaction',
+            reference_type: 'sale',
+            reference_id: tx.id,
+            created_by: user.id,
+            created_at: new Date().toISOString(),
+          }])
+      }
+
+      // Broadcast completion so other pages refresh
+      dispatchAppEvent('transaction:completed', { transactionId: tx.id })
+
       toast.success('Transaction completed successfully!')
       clearCart()
       setShowCheckout(false)
       setAmountReceived('')
       setPaymentMethod('cash')
     } catch (error) {
+      console.error('Checkout error:', error)
       toast.error('Transaction failed. Please try again.')
     } finally {
       setProcessing(false)
