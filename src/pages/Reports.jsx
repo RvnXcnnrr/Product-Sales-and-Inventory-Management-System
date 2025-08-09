@@ -145,14 +145,18 @@ const Reports = () => {
 
   // Top products by revenue
   const topProducts = useMemo(() => {
-    const sums = new Map()
+    // Track both revenue and units sold per product
+    const agg = new Map()
     for (const item of transactionItems) {
-      sums.set(item.product_id, (sums.get(item.product_id) || 0) + Number(item.total_price || 0))
+      const prev = agg.get(item.product_id) || { revenue: 0, units: 0 }
+      prev.revenue += Number(item.total_price || 0)
+      prev.units += Number(item.quantity || 0)
+      agg.set(item.product_id, prev)
     }
-    const ranked = Array.from(sums.entries())
-      .sort((a, b) => b[1] - a[1])
+    const ranked = Array.from(agg.entries())
+      .sort((a, b) => b[1].revenue - a[1].revenue)
       .slice(0, 5)
-      .map(([pid, revenue]) => ({ id: pid, name: productMap.get(pid)?.name || 'Product', sales: '-', revenue }))
+      .map(([pid, { revenue, units }]) => ({ id: pid, name: productMap.get(pid)?.name || 'Product', sales: units, revenue }))
     return ranked
   }, [transactionItems, productMap])
 
@@ -387,7 +391,7 @@ const Reports = () => {
                       </div>
                     </td>
                     <td className="table-cell">
-          <div className="text-sm font-medium">—</div>
+          <div className="text-sm font-medium">{product.sales ?? 0}</div>
                     </td>
                     <td className="table-cell">
           <div className="text-sm font-medium">{formatCurrency(product.revenue || 0)}</div>
