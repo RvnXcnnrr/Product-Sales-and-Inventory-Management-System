@@ -33,26 +33,7 @@ export const getOfflineData = (key) => {
   }
 }
 
-// Simple in-memory storage to prevent localStorage sync issues
-const memoryStorage = new Map();
-
-// Custom storage provider to prevent refresh issues
-const customStorage = {
-  getItem: (key) => {
-    const value = memoryStorage.get(key);
-    console.log(`[MemStorage] Getting: ${key.substring(0, 10)}...`);
-    return value === undefined ? null : value;
-  },
-  setItem: (key, value) => {
-    console.log(`[MemStorage] Setting: ${key.substring(0, 10)}...`);
-    memoryStorage.set(key, value);
-    return value;
-  },
-  removeItem: (key) => {
-    console.log(`[MemStorage] Removing: ${key.substring(0, 10)}...`);
-    memoryStorage.delete(key);
-  }
-};
+// Note: Use Supabase's default storage (localStorage) to persist sessions across refreshes
 
 // Create real client or fallback mock if env vars missing
 let supabase
@@ -96,8 +77,7 @@ if (missingEnv) {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
-        flowType: 'implicit', // Use implicit flow to avoid redirects
-        storage: customStorage, // Use our custom in-memory storage
+    flowType: 'implicit', // SPA password flow is fine with implicit
       },
       global: {
         headers: {
@@ -112,7 +92,7 @@ if (missingEnv) {
       }
     })
     
-    console.log('[supabase] Client initialized with memory storage (avoids refresh issues)')
+  console.log('[supabase] Client initialized with persistent storage (localStorage)')
   } catch (error) {
     console.error('[supabase] Failed to initialize client:', error)
     // Provide a non-crashing fallback

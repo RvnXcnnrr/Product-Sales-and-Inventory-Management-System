@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { 
   Plus, 
   Search, 
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
 import { formatCurrency } from '../utils/format'
@@ -22,6 +23,8 @@ const Sales = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [amountReceived, setAmountReceived] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [confirmClearCart, setConfirmClearCart] = useState(false)
+  const [confirmRemoveItemId, setConfirmRemoveItemId] = useState(null)
   
   const { cart, totals, addItem, updateItem, removeItem, clearCart } = useCart()
 
@@ -101,7 +104,7 @@ const Sales = () => {
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity <= 0) {
-      removeItem(productId)
+      setConfirmRemoveItemId(productId)
     } else {
       updateItem(productId, { quantity: newQuantity })
     }
@@ -247,9 +250,9 @@ const Sales = () => {
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 Cart ({totals.itemCount})
               </h2>
-              {cart.items.length > 0 && (
+        {cart.items.length > 0 && (
                 <button
-                  onClick={clearCart}
+          onClick={() => setConfirmClearCart(true)}
                   className="text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -298,7 +301,7 @@ const Sales = () => {
                     </div>
                     
                     <button
-                      onClick={() => removeItem(item.product_id)}
+                      onClick={() => setConfirmRemoveItemId(item.product_id)}
                       className="text-gray-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -464,6 +467,28 @@ const Sales = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Confirm clear cart */}
+      <ConfirmDialog
+        isOpen={confirmClearCart}
+        onCancel={() => setConfirmClearCart(false)}
+        onConfirm={() => { clearCart(); setConfirmClearCart(false) }}
+        title="Clear cart?"
+        description="This will remove all items from the cart. You can't undo this action."
+        confirmText="Clear"
+        variant="danger"
+      />
+
+      {/* Confirm remove single item */}
+      <ConfirmDialog
+        isOpen={confirmRemoveItemId != null}
+        onCancel={() => setConfirmRemoveItemId(null)}
+        onConfirm={() => { if (confirmRemoveItemId != null) removeItem(confirmRemoveItemId); setConfirmRemoveItemId(null) }}
+        title="Remove item?"
+        description="This item will be removed from the cart."
+        confirmText="Remove"
+        variant="danger"
+      />
     </div>
   )
 }

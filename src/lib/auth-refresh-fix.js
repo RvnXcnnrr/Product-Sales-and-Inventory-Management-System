@@ -1,38 +1,15 @@
-// This file must be run to register the new auth provider
-import { createClient } from '@supabase/supabase-js'
+// This file applies safe auth-refresh adjustments for the browser session
 
-// Clear any stored auth data that might be causing refresh loops
-window.localStorage.removeItem('supabase.auth.token');
-window.localStorage.removeItem('sb-piyehrqkuzckfkewtvpy-auth-token');
-window.sessionStorage.removeItem('supabase.auth.token');
-window.sessionStorage.removeItem('sb-piyehrqkuzckfkewtvpy-auth-token');
+// IMPORTANT: Do not clear auth tokens on load, this causes logout on refresh
+// If you must reset tokens, do it behind a manual action/debug flag only.
 
 // Check and unregister any service workers
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for (let registration of registrations) {
-      registration.unregister();
-      console.log('Unregistered service worker:', registration.scope);
-    }
-  });
-}
+// Avoid unregistering service workers automatically; keep PWA functionality intact
 
 // Add this to prevent page refreshes
-window.addEventListener('beforeunload', function (e) {
-  // Only prevent unintentional refreshes by checking if it's a known action
-  const isKnownAction = window.intentionalNavigation || false;
-  
-  if (!isKnownAction) {
-    console.log('Preventing unintentional page refresh');
-    e.preventDefault();
-    e.returnValue = '';
-    return '';
-  }
-});
+// Do not block normal page refreshes; let the browser reload freely
 
 // Mark intentional navigation
-window.markIntentionalNavigation = function() {
-  window.intentionalNavigation = true;
-};
+// Optional helper could be reintroduced if needed
 
-console.log('Auth refresh fix applied - page refreshes should now be stabilized');
+console.log('Auth refresh fix: non-destructive mode active');

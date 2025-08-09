@@ -1,12 +1,19 @@
-import React from 'react'
-import { Menu, Bell, User, LogOut, ShoppingCart } from 'lucide-react'
+import React, { useState } from 'react'
+import { Menu, Bell, LogOut, ShoppingCart } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import { Link } from 'react-router-dom'
+import ConfirmDialog from '../ui/ConfirmDialog'
 
 const Header = ({ onMenuClick }) => {
   const { profile, signOut } = useAuth()
   const { totals } = useCart()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  const handleLogout = async () => {
+    setShowLogoutConfirm(false)
+    await signOut()
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
@@ -73,7 +80,7 @@ const Header = ({ onMenuClick }) => {
             </Link>
 
             <button
-              onClick={signOut}
+              onClick={() => setShowLogoutConfirm(true)}
               className="p-2 text-gray-500 hover:text-gray-600 transition-colors"
               title="Sign Out"
             >
@@ -82,6 +89,16 @@ const Header = ({ onMenuClick }) => {
           </div>
         </div>
       </div>
+
+      {/* Logout confirmation */}
+      <ConfirmDialog
+        isOpen={showLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title="Log out?"
+        description="You'll be signed out of your session."
+        confirmText="Log out"
+      />
     </header>
   )
 }

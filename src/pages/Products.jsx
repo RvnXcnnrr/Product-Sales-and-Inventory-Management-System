@@ -6,16 +6,14 @@ import {
   Trash2, 
   Eye,
   Package,
-  DollarSign,
-  AlertTriangle,
-  MoreVertical,
-  Image,
   Save,
   X
 } from 'lucide-react'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { formatCurrency } from '../utils/format'
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -23,6 +21,7 @@ const Products = () => {
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   // Mock products data
   const [products, setProducts] = useState([
@@ -175,10 +174,14 @@ const Products = () => {
   }
 
   const handleDeleteProduct = (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter(product => product.id !== productId))
-      toast.success('Product deleted successfully!')
-    }
+    setConfirmDeleteId(productId)
+  }
+
+  const confirmDelete = () => {
+    if (confirmDeleteId == null) return
+    setProducts(products.filter(product => product.id !== confirmDeleteId))
+    setConfirmDeleteId(null)
+    toast.success('Product deleted successfully!')
   }
 
   const getStockStatus = (product) => {
@@ -446,8 +449,8 @@ const Products = () => {
                     </td>
                     <td className="table-cell">
                       <div className="text-sm">
-                        <div className="font-medium">${product.selling_price.toFixed(2)}</div>
-                        <div className="text-gray-500">Cost: ${product.cost_price.toFixed(2)}</div>
+                        <div className="font-medium">{formatCurrency(product.selling_price)}</div>
+                        <div className="text-gray-500">Cost: {formatCurrency(product.cost_price)}</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -619,6 +622,17 @@ const Products = () => {
           </div>
         )}
       </Modal>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={confirmDeleteId != null}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete product?"
+        description="This action cannot be undone. The product will be removed from your catalog."
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   )
 }

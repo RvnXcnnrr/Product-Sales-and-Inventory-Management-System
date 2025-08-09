@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Modern Product Sales and Inventory Management System" />
+    <title>POS & Inventory Management System</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Meta tags for PWA -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="background-color" content="#ffffff" />
+    
+    <!-- Apple-specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="POS System" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    
+    <!-- Microsoft-specific meta tags -->
+    <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.svg" />
+    
+    <!-- Additional meta tags -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="POS System" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <script type="module" crossorigin src="/assets/index-B8kRnX3K.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CkApoCBE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <!-- Service Worker cleanup to prevent refresh issues -->
+    <script>
+      // Unregister any existing service workers to fix refresh loops
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            console.log('Unregistering service worker:', registration.scope);
+            registration.unregister();
+          }
+          console.log('All service workers unregistered');
+          
+          // Clear any auth-related storage to prevent refresh issues
+          localStorage.removeItem('supabase.auth.token');
+          localStorage.removeItem('supabase.auth.expires_at');
+          sessionStorage.removeItem('supabase.auth.token');
+          sessionStorage.removeItem('supabase.auth.expires_at');
+          
+          // Remove event listeners that might be causing refresh loops
+          window.removeEventListener('online', () => {});
+          window.removeEventListener('offline', () => {});
+        });
+      }
+    </script>
+  </body>
+</html>

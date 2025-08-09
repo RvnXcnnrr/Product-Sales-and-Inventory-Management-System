@@ -5,7 +5,6 @@ import {
   TrendingUp, 
   TrendingDown,
   Search,
-  Filter,
   Download,
   Plus,
   Minus,
@@ -13,8 +12,10 @@ import {
   History
 } from 'lucide-react'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { formatCurrency } from '../utils/format'
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -23,6 +24,8 @@ const Inventory = () => {
   const [showStockUpdate, setShowStockUpdate] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [pendingAdjustment, setPendingAdjustment] = useState(null)
+  const [showConfirmAdjustment, setShowConfirmAdjustment] = useState(false)
 
   const {
     register,
@@ -175,8 +178,7 @@ const Inventory = () => {
   const lowStockCount = inventory.filter(item => item.current_stock <= item.min_stock_level).length
   const outOfStockCount = inventory.filter(item => item.current_stock === 0).length
 
-  const handleStockUpdate = (data) => {
-    const adjustment = parseInt(data.adjustment)
+  const applyStockUpdate = (adjustment) => {
     const updatedInventory = inventory.map(item =>
       item.id === selectedProduct.id
         ? {
@@ -195,6 +197,17 @@ const Inventory = () => {
     
     const actionType = adjustment > 0 ? 'increased' : 'decreased'
     toast.success(`Stock ${actionType} successfully!`)
+  }
+
+  const handleStockUpdate = (data) => {
+    const adjustment = parseInt(data.adjustment)
+    // If reducing stock, ask for confirmation
+    if (adjustment < 0) {
+      setPendingAdjustment(adjustment)
+      setShowConfirmAdjustment(true)
+      return
+    }
+    applyStockUpdate(adjustment)
   }
 
   return (
@@ -243,7 +256,7 @@ const Inventory = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900">${totalValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalValue)}</p>
             </div>
           </div>
         </div>
@@ -367,8 +380,8 @@ const Inventory = () => {
                     </td>
                     <td className="table-cell">
                       <div className="text-sm">
-                        <div className="font-medium">${item.total_value.toFixed(2)}</div>
-                        <div className="text-gray-500">${item.cost_price.toFixed(2)} each</div>
+                        <div className="font-medium">{formatCurrency(item.total_value)}</div>
+                        <div className="text-gray-500">{formatCurrency(item.cost_price)} each</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -503,6 +516,17 @@ const Inventory = () => {
           </form>
         )}
       </Modal>
+
+      {/* Confirm negative adjustment */}
+      <ConfirmDialog
+        isOpen={showConfirmAdjustment}
+        onCancel={() => setShowConfirmAdjustment(false)}
+        onConfirm={() => { if (typeof pendingAdjustment === 'number') applyStockUpdate(pendingAdjustment); setShowConfirmAdjustment(false) }}
+        title="Reduce stock?"
+        description="You're about to reduce the stock quantity. This will update current stock and cannot be undone."
+        confirmText="Reduce"
+        variant="danger"
+      />
 
       {/* Stock History Modal */}
       <Modal

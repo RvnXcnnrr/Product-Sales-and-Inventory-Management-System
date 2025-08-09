@@ -1,114 +1,184 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { 
   TrendingUp, 
   DollarSign, 
   Package, 
   ShoppingCart, 
-  Users,
   AlertTriangle,
-  Calendar,
   Eye
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import supabase from '../lib/supabase.js'
+import useSystemSettings from '../utils/systemSettings'
+import LoadingSpinner from '../components/ui/LoadingSpinner.jsx'
 
 const Dashboard = () => {
-  // Mock data - will be replaced with real API calls
-  const stats = [
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [recentTransactions, setRecentTransactions] = useState([])
+  const [lowStockProducts, setLowStockProducts] = useState([])
+  const [totals, setTotals] = useState({
+    todaySales: 0,
+    transactionsToday: 0,
+    totalProducts: 0,
+    lowStockCount: 0,
+  })
+
+  // Currency settings
+  const { settings } = useSystemSettings()
+  const currencyFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: settings?.currency || 'USD',
+        maximumFractionDigits: 2,
+      })
+    } catch {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+    }
+  }, [settings?.currency])
+
+  // Helpers
+  const startOfTodayISO = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d.toISOString()
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        // Recent transactions with item count (RLS ensures only user-accessible data)
+        const { data: tx, error: txErr } = await supabase
+          .from('transactions')
+          .select('id, customer_name, total_amount, processed_at, status, transaction_items(count)')
+          .order('processed_at', { ascending: false })
+          .limit(5)
+
+        if (txErr) throw txErr
+
+        // Today transactions for metrics
+        const { data: txToday, error: txTodayErr } = await supabase
+          .from('transactions')
+          .select('id, total_amount, processed_at')
+          .gte('processed_at', startOfTodayISO)
+
+        if (txTodayErr) throw txTodayErr
+
+        // Products (count only)
+        const { count: productsCount, error: prodCountErr } = await supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+
+        if (prodCountErr) throw prodCountErr
+
+        // Low stock products (fetch and filter client-side for column comparison)
+        const { data: products, error: lowErr } = await supabase
+          .from('products')
+          .select('id, name, sku, stock_quantity, min_stock_level, selling_price')
+          .limit(25)
+
+        if (lowErr) throw lowErr
+
+        const low = (products || []).filter(p => (p.stock_quantity ?? 0) <= (p.min_stock_level ?? 0))
+
+        if (!isMounted) return
+
+        setRecentTransactions(
+          (tx || []).map(t => ({
+            id: t.id,
+            customer: t.customer_name || '—',
+            amount: Number(t.total_amount || 0),
+            items: Array.isArray(t.transaction_items) && t.transaction_items.length > 0 && t.transaction_items[0]?.count != null
+              ? t.transaction_items[0].count
+              : undefined,
+            time: new Date(t.processed_at).toLocaleString(),
+            status: t.status || 'completed',
+          }))
+        )
+
+        const todaySales = (txToday || []).reduce((sum, t) => sum + Number(t.total_amount || 0), 0)
+        const transactionsToday = (txToday || []).length
+
+        setLowStockProducts(low.slice(0, 5).map(p => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          currentStock: p.stock_quantity ?? 0,
+          minStock: p.min_stock_level ?? 0,
+          price: Number(p.selling_price || 0),
+        })))
+
+        setTotals({
+          todaySales,
+          transactionsToday,
+          totalProducts: productsCount || 0,
+          lowStockCount: low.length,
+        })
+      } catch (e) {
+        console.error('Dashboard load error:', e)
+        if (isMounted) setError(e.message || 'Failed to load dashboard')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { isMounted = false }
+  }, [startOfTodayISO])
+
+  const stats = useMemo(() => ([
     {
-      title: 'Today\'s Sales',
-      value: '$2,847',
-      change: '+12.5%',
-      changeType: 'positive',
+      title: "Today's Sales",
+  value: currencyFormatter.format(totals.todaySales),
+      change: '',
+      changeType: 'neutral',
       icon: DollarSign,
       color: 'bg-green-500'
     },
     {
       title: 'Total Products',
-      value: '1,234',
-      change: '+8',
-      changeType: 'positive',
+      value: `${totals.totalProducts}`,
+      change: '',
+      changeType: 'neutral',
       icon: Package,
       color: 'bg-blue-500'
     },
     {
-      title: 'Transactions',
-      value: '89',
-      change: '+23%',
-      changeType: 'positive',
+      title: 'Transactions (Today)',
+      value: `${totals.transactionsToday}`,
+      change: '',
+      changeType: 'neutral',
       icon: ShoppingCart,
       color: 'bg-purple-500'
     },
     {
       title: 'Low Stock Items',
-      value: '12',
-      change: '+3',
-      changeType: 'negative',
+      value: `${totals.lowStockCount}`,
+      change: '',
+      changeType: 'neutral',
       icon: AlertTriangle,
       color: 'bg-orange-500'
     }
-  ]
+  ]), [totals])
 
-  const recentTransactions = [
-    {
-      id: 1,
-      customer: 'John Doe',
-      amount: 125.50,
-      items: 3,
-      time: '2 minutes ago',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      customer: 'Sarah Wilson',
-      amount: 87.25,
-      items: 2,
-      time: '15 minutes ago',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      customer: 'Mike Johnson',
-      amount: 234.75,
-      items: 5,
-      time: '32 minutes ago',
-      status: 'completed'
-    },
-    {
-      id: 4,
-      customer: 'Emma Brown',
-      amount: 156.00,
-      items: 4,
-      time: '1 hour ago',
-      status: 'completed'
-    }
-  ]
+  if (loading) {
+    return <LoadingSpinner text="Loading dashboard..." />
+  }
 
-  const lowStockProducts = [
-    {
-      id: 1,
-      name: 'iPhone 13 Pro',
-      sku: 'IPH13P-256',
-      currentStock: 2,
-      minStock: 5,
-      price: 999.99
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S22',
-      sku: 'SGS22-128',
-      currentStock: 1,
-      minStock: 3,
-      price: 699.99
-    },
-    {
-      id: 3,
-      name: 'MacBook Air M2',
-      sku: 'MBA-M2-512',
-      currentStock: 0,
-      minStock: 2,
-      price: 1299.99
-    }
-  ]
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded">
+          Failed to load dashboard: {error}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -208,7 +278,7 @@ const Dashboard = () => {
                           <div className="font-medium text-gray-900">{transaction.customer}</div>
                         </td>
                         <td className="table-cell">
-                          <div className="font-medium text-gray-900">${transaction.amount.toFixed(2)}</div>
+                          <div className="font-medium text-gray-900">{currencyFormatter.format(transaction.amount)}</div>
                         </td>
                         <td className="table-cell">
                           <div className="text-gray-900">{transaction.items} items</div>
