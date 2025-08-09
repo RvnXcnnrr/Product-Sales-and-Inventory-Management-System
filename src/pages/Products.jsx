@@ -93,8 +93,67 @@ const Products = () => {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
+    getValues,
     formState: { errors }
   } = useForm()
+
+  // Quick SKU generator if left blank
+  const generateSku = (name = '') => {
+    const prefix = (name || '')
+      .toString()
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '')
+      .slice(0, 6) || 'SKU'
+    const suffix = Date.now().toString(36).toUpperCase().slice(-5)
+    return `${prefix}-${suffix}`
+  }
+
+  // Quick add category via prompt
+  const addCategoryQuick = async () => {
+    try {
+      // Resolve store_id from profile or store_users mapping
+      let targetStoreId = profile?.store_id || null
+      if (!targetStoreId && profile?.id) {
+        const { data: su, error: suErr } = await supabase
+          .from('store_users')
+          .select('store_id')
+          .eq('user_id', profile.id)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+        if (suErr && suErr.code !== 'PGRST116') throw suErr
+        if (su?.store_id) targetStoreId = su.store_id
+      }
+      if (!targetStoreId) {
+        toast.error('No store mapping found for your account')
+        return
+      }
+      const name = window.prompt('Enter new category name')
+      if (!name || !name.trim()) return
+      const { data: newCat, error: catErr } = await supabase
+        .from('categories')
+        .insert([{ name: name.trim(), store_id: targetStoreId }])
+        .select()
+        .single()
+      if (catErr) throw catErr
+      setCategoriesData(prev => [...prev, newCat])
+      setCategoryMap(prev => new Map(prev).set(newCat.id, newCat.name))
+      // set selected category in form
+      setValue('category_id', newCat.id)
+      toast.success('Category added')
+    } catch (e) {
+      console.error('Failed to add category:', e)
+      // Permission or RLS error
+      if (e?.code === '42501' || e?.message?.toLowerCase?.().includes('permission') || e?.message?.toLowerCase?.().includes('policy')) {
+        toast.error('You do not have permission to add categories')
+      } else {
+        toast.error('Failed to add category')
+      }
+    }
+  }
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,8 +166,35 @@ const Products = () => {
 
   const handleAddProduct = async (data) => {
     try {
+      if (!profile?.store_id) {
+        toast.error('No store selected')
+        return
+      }
+      // Normalize and auto-generate SKU if empty
+      let sku = (data.sku || '').trim()
+      if (!sku) {
+        sku = generateSku(data.name)
+      }
+
+      // Pre-check duplicate SKU in this store
+      const { data: existingSku, error: skuErr } = await supabase
+        .from('products')
+        .select('id')
+        .eq('store_id', profile.store_id)
+        .eq('sku', sku)
+        .maybeSingle()
+      if (skuErr && skuErr.code !== 'PGRST116') {
+        // PGRST116 is no rows when using single/maybeSingle
+        throw skuErr
+      }
+      if (existingSku) {
+        toast.error('SKU already exists in your store')
+        return
+      }
+
       const payload = {
         ...data,
+        sku,
         cost_price: parseFloat(data.cost_price),
         selling_price: parseFloat(data.selling_price),
         stock_quantity: parseInt(data.stock_quantity),
@@ -119,7 +205,33 @@ const Products = () => {
         .from('products')
         .insert([payload])
         .select()
-      if (error) throw error
+      if (error) {
+        // Handle unique violation gracefully
+        if (error.code === '23505') {
+          toast.error('SKU already exists')
+          return
+        }
+        throw error
+      }
+      // Log initial stock if any
+      const created = inserted?.[0]
+      if (created && payload.stock_quantity > 0) {
+        try {
+          await supabase.from('inventory_logs').insert([{
+            product_id: created.id,
+            store_id: profile.store_id,
+            type: 'stock_in',
+            quantity_change: payload.stock_quantity,
+            previous_quantity: 0,
+            new_quantity: payload.stock_quantity,
+            reason: 'initial_stock',
+            notes: 'Initial stock on product creation',
+            created_by: profile.id
+          }])
+        } catch (logErr) {
+          console.warn('Inventory log failed:', logErr)
+        }
+      }
       setProducts([...(inserted || []), ...products])
       setShowAddProduct(false)
       reset()
@@ -132,8 +244,11 @@ const Products = () => {
 
   const handleEditProduct = async (data) => {
     try {
+      // Ensure SKU cannot be blank on edit
+      const nextSku = (data.sku || '').trim() || editingProduct.sku
       const payload = {
         ...data,
+        sku: nextSku,
         cost_price: parseFloat(data.cost_price),
         selling_price: parseFloat(data.selling_price),
         stock_quantity: parseInt(data.stock_quantity),
@@ -159,7 +274,6 @@ const Products = () => {
   const handleDeleteProduct = (productId) => {
     setConfirmDeleteId(productId)
   }
-
   const confirmDelete = () => {
     if (confirmDeleteId == null) return
     // Delete in DB then update state
@@ -172,8 +286,7 @@ const Products = () => {
           setProducts(products.filter(product => product.id !== confirmDeleteId))
           toast.success('Product deleted successfully!')
         }
-      })
-    setConfirmDeleteId(null)
+  })
   }
 
   const getStockStatus = (product) => {
@@ -185,147 +298,161 @@ const Products = () => {
     return { status: 'good', color: 'text-green-600', bg: 'bg-green-100' }
   }
 
-  const ProductForm = ({ product, onSubmit, onCancel }) => (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="label">Product Name *</label>
-          <input
-            {...register('name', { required: 'Product name is required' })}
-            className="input"
-            defaultValue={product?.name}
-            placeholder="Enter product name"
-          />
-          {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
+  const ProductForm = ({ product, onSubmit, onCancel }) => {
+    const cost = parseFloat(watch('cost_price') || 0)
+    const price = parseFloat(watch('selling_price') || 0)
+    const margin = Math.max(price - cost, 0)
+    const marginPct = price > 0 ? (margin / price) * 100 : 0
+    const isEditing = !!product
+    return (
+      <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="label">Product Name *</label>
+            <input
+              {...register('name', { required: 'Product name is required' })}
+              className="input"
+              defaultValue={product?.name}
+              placeholder="Enter product name"
+            />
+            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">SKU {isEditing ? '*' : ''}</label>
+            <input
+              {...register('sku')}
+              className="input"
+              defaultValue={product?.sku}
+              placeholder={isEditing ? 'Enter SKU' : 'Leave blank to auto-generate'}
+            />
+            {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">Barcode</label>
+            <input
+              {...register('barcode')}
+              className="input"
+              defaultValue={product?.barcode}
+              placeholder="Enter barcode"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="label">Category *</label>
+              <button type="button" onClick={addCategoryQuick} className="text-sm text-primary-600 hover:text-primary-500 inline-flex items-center">
+                <Plus className="w-3 h-3 mr-1" /> Add new
+              </button>
+            </div>
+            <select
+              {...register('category_id', { required: 'Category is required' })}
+              className="input"
+              defaultValue={product?.category_id || ''}
+            >
+              <option value="">Select category</option>
+              {categoriesData.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+            {errors.category_id && <p className="text-sm text-red-600 mt-1">{errors.category_id.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">Cost Price *</label>
+            <input
+              type="number"
+              step="0.01"
+              {...register('cost_price', {
+                required: 'Cost price is required',
+                min: { value: 0, message: 'Cost price must be positive' }
+              })}
+              className="input"
+              defaultValue={product?.cost_price}
+              placeholder="0.00"
+            />
+            {errors.cost_price && <p className="text-sm text-red-600 mt-1">{errors.cost_price.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">Selling Price *</label>
+            <input
+              type="number"
+              step="0.01"
+              {...register('selling_price', {
+                required: 'Selling price is required',
+                min: { value: 0, message: 'Selling price must be positive' },
+                validate: (v) => parseFloat(v || 0) >= parseFloat(getValues('cost_price') || 0) || 'Selling must be greater than or equal to cost'
+              })}
+              className="input"
+              defaultValue={product?.selling_price}
+              placeholder="0.00"
+            />
+            <p className="text-xs text-gray-500 mt-1">Margin: {formatCurrency(margin)} ({marginPct.toFixed(1)}%)</p>
+            {errors.selling_price && <p className="text-sm text-red-600 mt-1">{errors.selling_price.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">Stock Quantity *</label>
+            <input
+              type="number"
+              {...register('stock_quantity', {
+                required: 'Stock quantity is required',
+                min: { value: 0, message: 'Stock quantity must be positive' }
+              })}
+              className="input"
+              defaultValue={product?.stock_quantity}
+              placeholder="0"
+            />
+            {errors.stock_quantity && <p className="text-sm text-red-600 mt-1">{errors.stock_quantity.message}</p>}
+          </div>
+
+          <div>
+            <label className="label">Minimum Stock Level</label>
+            <input
+              type="number"
+              {...register('min_stock_level', {
+                min: { value: 0, message: 'Minimum stock must be positive' }
+              })}
+              className="input"
+              defaultValue={product?.min_stock_level || 0}
+              placeholder="0"
+            />
+            {errors.min_stock_level && <p className="text-sm text-red-600 mt-1">{errors.min_stock_level.message}</p>}
+          </div>
         </div>
 
         <div>
-          <label className="label">SKU *</label>
-          <input
-            {...register('sku', { required: 'SKU is required' })}
-            className="input"
-            defaultValue={product?.sku}
-            placeholder="Enter SKU"
-          />
-          {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku.message}</p>}
-        </div>
-
-        <div>
-          <label className="label">Barcode</label>
-          <input
-            {...register('barcode')}
-            className="input"
-            defaultValue={product?.barcode}
-            placeholder="Enter barcode"
+          <label className="label">Description</label>
+          <textarea
+            {...register('description')}
+            className="input h-24 resize-none"
+            defaultValue={product?.description}
+            placeholder="Enter product description"
           />
         </div>
 
-        <div>
-          <label className="label">Category *</label>
-          <select
-            {...register('category_id', { required: 'Category is required' })}
-            className="input"
-            defaultValue={product?.category_id || ''}
+        <div className="flex justify-end space-x-3 pt-4 border-t">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn btn-secondary btn-md"
           >
-            <option value="">Select category</option>
-            {categoriesData.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-          {errors.category_id && <p className="text-sm text-red-600 mt-1">{errors.category_id.message}</p>}
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary btn-md"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isEditing ? 'Update Product' : 'Add Product'}
+          </button>
         </div>
-
-        <div>
-          <label className="label">Cost Price *</label>
-          <input
-            type="number"
-            step="0.01"
-            {...register('cost_price', { 
-              required: 'Cost price is required',
-              min: { value: 0, message: 'Cost price must be positive' }
-            })}
-            className="input"
-            defaultValue={product?.cost_price}
-            placeholder="0.00"
-          />
-          {errors.cost_price && <p className="text-sm text-red-600 mt-1">{errors.cost_price.message}</p>}
-        </div>
-
-        <div>
-          <label className="label">Selling Price *</label>
-          <input
-            type="number"
-            step="0.01"
-            {...register('selling_price', { 
-              required: 'Selling price is required',
-              min: { value: 0, message: 'Selling price must be positive' }
-            })}
-            className="input"
-            defaultValue={product?.selling_price}
-            placeholder="0.00"
-          />
-          {errors.selling_price && <p className="text-sm text-red-600 mt-1">{errors.selling_price.message}</p>}
-        </div>
-
-        <div>
-          <label className="label">Stock Quantity *</label>
-          <input
-            type="number"
-            {...register('stock_quantity', { 
-              required: 'Stock quantity is required',
-              min: { value: 0, message: 'Stock quantity must be positive' }
-            })}
-            className="input"
-            defaultValue={product?.stock_quantity}
-            placeholder="0"
-          />
-          {errors.stock_quantity && <p className="text-sm text-red-600 mt-1">{errors.stock_quantity.message}</p>}
-        </div>
-
-        <div>
-          <label className="label">Minimum Stock Level</label>
-          <input
-            type="number"
-            {...register('min_stock_level', {
-              min: { value: 0, message: 'Minimum stock must be positive' }
-            })}
-            className="input"
-            defaultValue={product?.min_stock_level || 0}
-            placeholder="0"
-          />
-          {errors.min_stock_level && <p className="text-sm text-red-600 mt-1">{errors.min_stock_level.message}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="label">Description</label>
-        <textarea
-          {...register('description')}
-          className="input h-24 resize-none"
-          defaultValue={product?.description}
-          placeholder="Enter product description"
-        />
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4 border-t">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="btn btn-secondary btn-md"
-        >
-          <X className="w-4 h-4 mr-2" />
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="btn btn-primary btn-md"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {product ? 'Update Product' : 'Add Product'}
-        </button>
-      </div>
-    </form>
-  )
+      </form>
+    )
+  }
 
   return (
     <div className="space-y-6">
