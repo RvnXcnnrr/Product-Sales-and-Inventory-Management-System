@@ -18,9 +18,11 @@ import { formatCurrency } from '../utils/format'
 import supabase from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { dispatchAppEvent } from '../lib/eventBus'
+import { useNotifications } from '../contexts/NotificationsContext'
 
 const Sales = () => {
   const { profile, user } = useAuth()
+  const { add: addNotification } = useNotifications()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showCheckout, setShowCheckout] = useState(false)
@@ -196,6 +198,18 @@ const Sales = () => {
 
       // Broadcast completion so other pages refresh
       dispatchAppEvent('transaction:completed', { transactionId: tx.id })
+
+      // Create a notification
+      try {
+        await addNotification({
+          title: 'Sale completed',
+          message: `${tx.transaction_number} • ${formatCurrency(totals.total)}`,
+          type: 'success',
+          data: { transactionId: tx.id, total: totals.total }
+        })
+      } catch (e) {
+        // non-fatal
+      }
 
       toast.success('Transaction completed successfully!')
       clearCart()

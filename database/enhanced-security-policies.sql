@@ -9,6 +9,8 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transaction_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_logs ENABLE ROW LEVEL SECURITY;
+-- Enable RLS for notifications if table exists/when created
+
 
 -- Create store_settings table for extended per-store configuration (idempotent)
 DO $$
@@ -91,6 +93,29 @@ BEGIN
   END IF;
   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='store_settings' AND policyname='Users can insert store settings') THEN
     DROP POLICY "Users can insert store settings" ON store_settings;
+  END IF;
+END$$;
+
+-- Create notifications table (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'notifications'
+  ) THEN
+    CREATE TABLE public.notifications (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      store_id uuid NOT NULL REFERENCES public.stores(id) ON DELETE CASCADE,
+      user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+      type text NOT NULL DEFAULT 'info',
+      title text NOT NULL,
+      message text,
+      data jsonb NOT NULL DEFAULT '{}'::jsonb,
+      is_read boolean NOT NULL DEFAULT false,
+      created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now())
+    );
+    ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+    CREATE INDEX IF NOT EXISTS idx_notifications_store_created ON public.notifications(store_id, created_at DESC);
   END IF;
 END$$;
 
@@ -276,6 +301,38 @@ CREATE POLICY "Users can manage inventory logs" ON inventory_logs
       WHERE user_id = auth.uid() 
       AND role IN ('owner', 'manager') 
       AND is_active = true
+    )
+  );
+
+-- Notifications policies
+DROP POLICY IF EXISTS "Users can view store notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can insert store notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can update store notifications" ON notifications;
+
+-- Read: any active member of the store can read
+CREATE POLICY "Users can view store notifications" ON notifications
+  FOR SELECT USING (
+    store_id IN (
+      SELECT store_id FROM store_users 
+      WHERE user_id = auth.uid() AND is_active = true
+    )
+  );
+
+-- Insert: any active member can insert (clients may create notifications on events)
+CREATE POLICY "Users can insert store notifications" ON notifications
+  FOR INSERT WITH CHECK (
+    store_id IN (
+      SELECT store_id FROM store_users 
+      WHERE user_id = auth.uid() AND is_active = true
+    )
+  );
+
+-- Update: allow members to mark as read or edit their store notifications
+CREATE POLICY "Users can update store notifications" ON notifications
+  FOR UPDATE USING (
+    store_id IN (
+      SELECT store_id FROM store_users 
+      WHERE user_id = auth.uid() AND is_active = true
     )
   );
 

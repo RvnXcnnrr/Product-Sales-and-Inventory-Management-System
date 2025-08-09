@@ -4,11 +4,14 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import { Link } from 'react-router-dom'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import { useNotifications } from '../../contexts/NotificationsContext'
 
 const Header = ({ onMenuClick }) => {
   const { profile, signOut } = useAuth()
   const { totals } = useCart()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [openNotif, setOpenNotif] = useState(false)
+  const { items: notifications, unread, markAllRead } = useNotifications()
 
   const handleLogout = async () => {
     setShowLogoutConfirm(false)
@@ -58,10 +61,41 @@ const Header = ({ onMenuClick }) => {
           </Link>
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-500 hover:text-gray-600 transition-colors">
-            <Bell className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-2 h-2"></span>
-          </button>
+          <div className="relative">
+            <button
+              className="relative p-2 text-gray-500 hover:text-gray-600 transition-colors"
+              onClick={() => setOpenNotif(o => !o)}
+              title="Notifications"
+            >
+              <Bell className="w-6 h-6" />
+              {unread > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center">
+                  {unread}
+                </span>
+              )}
+            </button>
+            {openNotif && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                <div className="flex items-center justify-between px-3 py-2 border-b">
+                  <span className="text-sm font-medium">Notifications</span>
+                  <button className="text-xs text-primary-600 hover:underline" onClick={markAllRead} disabled={!unread}>Mark all as read</button>
+                </div>
+                <div className="max-h-80 overflow-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-sm text-gray-500">No notifications</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className={`px-4 py-3 border-b last:border-b-0 ${n.is_read ? 'bg-white' : 'bg-gray-50'}`}>
+                        <div className="text-sm font-medium text-gray-900">{n.title}</div>
+                        {n.message && <div className="text-sm text-gray-600 mt-0.5">{n.message}</div>}
+                        <div className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* User Menu */}
           <div className="relative flex items-center space-x-3">
