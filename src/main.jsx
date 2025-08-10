@@ -9,6 +9,7 @@ import { CartProvider } from './contexts/CartContext.jsx';
 import { NotificationsProvider } from './contexts/NotificationsContext.jsx';
 import { AuthErrorProvider } from './components/ui/AuthErrorModal.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import './index.css';
 import './lib/auth-refresh-fix.js'; // Import auth refresh fix
 
@@ -34,7 +35,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <CartProvider>
               <NotificationsProvider>
-                <App />
+                <ThemeProvider>
+                  <App />
+                </ThemeProvider>
               </NotificationsProvider>
               <Toaster
                 position="top-right"

@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useAuthError } from '../../components/ui/AuthErrorModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
-const Login = () => {
+const Login = ({ onRequestRegister, onRequestForgotPassword }) => {
   const [showPassword, setShowPassword] = useState(false)
   const { signIn, loading } = useAuth()
   const { showError } = useAuthError()
@@ -67,8 +67,8 @@ const Login = () => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Sign in to your account</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sign in to your account</h2>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
           Access your POS system dashboard
         </p>
       </div>
@@ -96,7 +96,7 @@ const Login = () => {
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
           )}
         </div>
 
@@ -129,7 +129,7 @@ const Login = () => {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
           )}
         </div>
 
@@ -139,18 +139,19 @@ const Login = () => {
             <input
               id="remember-me"
               type="checkbox"
-              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600"
             />
-            <label htmlFor="remember-me" className="ml-2 text-sm text-gray-700">
+            <label htmlFor="remember-me" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
               Remember me
             </label>
           </div>
-          <Link
-            to="/forgot-password"
-            className="text-sm text-primary-600 hover:text-primary-500"
-          >
-            Forgot password?
-          </Link>
+          {onRequestForgotPassword ? (
+            <button type="button" onClick={onRequestForgotPassword} className="text-sm text-primary-500 hover:text-primary-400">
+              Forgot password?
+            </button>
+          ) : (
+            <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">Forgot password?</Link>
+          )}
         </div>
 
         {/* Error message */}
@@ -172,14 +173,15 @@ const Login = () => {
 
       {/* Sign up link */}
       <div className="text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           Don&apos;t have an account?{' '}
-          <Link
-            to="/register"
-            className="text-primary-600 hover:text-primary-500 font-medium"
-          >
-            Sign up here
-          </Link>
+          {onRequestRegister ? (
+            <button type="button" onClick={onRequestRegister} className="text-primary-500 hover:text-primary-400 font-medium">
+              Sign up here
+            </button>
+          ) : (
+            <Link to="/register" className="text-primary-600 hover:text-primary-500 font-medium">Sign up here</Link>
+          )}
         </p>
       </div>
 

@@ -26,6 +26,10 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  // Add Category modal state
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [addingCategory, setAddingCategory] = useState(false)
   const { profile, loading: authLoading } = useAuth()
 
   // Products from database
@@ -43,8 +47,20 @@ const Products = () => {
       try {
         setLoading(true)
         setError(null)
-
-        if (!profile?.store_id) {
+        // Resolve target store: prefer profile.store_id; else fallback to first active mapping in store_users
+        let targetStoreId = profile?.store_id || null
+        if (!targetStoreId && profile?.id) {
+          const { data: su, error: suErr } = await supabase
+            .from('store_users')
+            .select('store_id')
+            .eq('user_id', profile.id)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle()
+          if (suErr && suErr.code !== 'PGRST116') throw suErr
+          if (su?.store_id) targetStoreId = su.store_id
+        }
+        if (!targetStoreId) {
           if (isMounted) {
             setProducts([])
             setCategories(['all'])
@@ -56,7 +72,7 @@ const Products = () => {
         const { data: prodData, error: prodErr } = await supabase
           .from('products')
           .select('id, name, sku, barcode, description, cost_price, selling_price, stock_quantity, min_stock_level, image_url, category_id, created_at, updated_at')
-          .eq('store_id', profile.store_id)
+          .eq('store_id', targetStoreId)
           .order('updated_at', { ascending: false })
 
         if (prodErr) throw prodErr
@@ -64,7 +80,7 @@ const Products = () => {
         const { data: catData, error: catErr } = await supabase
           .from('categories')
           .select('id, name')
-          .eq('store_id', profile.store_id)
+          .eq('store_id', targetStoreId)
           .order('name')
 
         if (catErr) throw catErr
@@ -75,6 +91,15 @@ const Products = () => {
         setCategoryMap(map)
         setCategoriesData(catData || [])
         setCategories(['all', ...Array.from(new Set((prodData || []).map(p => map.get(p.category_id)).filter(Boolean)))])
+
+        // Best effort: if profile.store_id is empty, update it to targetStoreId for consistent scoping elsewhere
+        if (!profile?.store_id && profile?.id) {
+          try {
+            await supabase.from('profiles').update({ store_id: targetStoreId, updated_at: new Date().toISOString() }).eq('id', profile.id)
+          } catch (_) {
+            // non-fatal
+          }
+        }
       } catch (e) {
         if (!isMounted) return
         console.error('Failed to load products:', e)
@@ -114,60 +139,7 @@ const Products = () => {
     return `${prefix}-${suffix}`
   }
 
-  // Quick add category via prompt
-  const addCategoryQuick = async () => {
-    try {
-      // Resolve store_id from profile or store_users mapping
-      let targetStoreId = profile?.store_id || null
-      if (!targetStoreId && profile?.id) {
-        const { data: su, error: suErr } = await supabase
-          .from('store_users')
-          .select('store_id')
-          .eq('user_id', profile.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-        if (suErr && suErr.code !== 'PGRST116') throw suErr
-        if (su?.store_id) targetStoreId = su.store_id
-      }
-      // If still no store, auto-create one and mapping for the user
-      if (!targetStoreId) {
-        if (!profile?.id) {
-          toast.error('You must be signed in')
-          return
-        }
-        const storeName = (profile.full_name || profile.email || 'My Store').toString().split('@')[0] + "'s Store"
-        const creating = await createStoreForUser(supabase, profile.id, storeName, 'owner')
-        if (!creating.success || !creating.storeId) {
-          console.error('Auto-create store failed:', creating.error || creating.message)
-          toast.error('Could not create a store for your account')
-          return
-        }
-        targetStoreId = creating.storeId
-      }
-      const name = window.prompt('Enter new category name')
-      if (!name || !name.trim()) return
-      const { data: newCat, error: catErr } = await supabase
-        .from('categories')
-        .insert([{ name: name.trim(), store_id: targetStoreId }])
-        .select()
-        .single()
-      if (catErr) throw catErr
-      setCategoriesData(prev => [...prev, newCat])
-      setCategoryMap(prev => new Map(prev).set(newCat.id, newCat.name))
-      // set selected category in form
-      setValue('category_id', newCat.id)
-      toast.success('Category added')
-    } catch (e) {
-      console.error('Failed to add category:', e)
-      // Permission or RLS error
-      if (e?.code === '42501' || e?.message?.toLowerCase?.().includes('permission') || e?.message?.toLowerCase?.().includes('policy')) {
-        toast.error('You do not have permission to add categories')
-      } else {
-        toast.error('Failed to add category')
-      }
-    }
-  }
+  // ...removed legacy prompt-based addCategoryQuick (replaced by modal)
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -376,10 +348,10 @@ const Products = () => {
             />
           </div>
 
-          <div>
+      <div>
             <div className="flex items-center justify-between">
               <label className="label">Category *</label>
-              <button type="button" onClick={addCategoryQuick} className="text-sm text-primary-600 hover:text-primary-500 inline-flex items-center">
+        <button type="button" onClick={() => setShowAddCategoryModal(true)} className="text-sm text-primary-600 hover:text-primary-500 inline-flex items-center">
                 <Plus className="w-3 h-3 mr-1" /> Add new
               </button>
             </div>
@@ -776,6 +748,94 @@ const Products = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Add Category Modal */}
+      <Modal
+        isOpen={showAddCategoryModal}
+        onClose={() => { if (!addingCategory) { setShowAddCategoryModal(false); setNewCategoryName('') } }}
+        title="Add New Category"
+        size="sm"
+      >
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="label">Category Name *</label>
+            <input
+              type="text"
+              className="input"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="e.g. Beverages"
+              autoFocus
+              disabled={addingCategory}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              className="btn btn-secondary btn-md"
+              onClick={() => { if (!addingCategory) { setShowAddCategoryModal(false); setNewCategoryName('') } }}
+              disabled={addingCategory}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-md"
+              disabled={addingCategory || !newCategoryName.trim()}
+              onClick={async () => {
+                const name = newCategoryName.trim()
+                if (!name) return
+                setAddingCategory(true)
+                try {
+                  // Resolve store_id from profile or store_users mapping
+                  let targetStoreId = profile?.store_id || null
+                  if (!targetStoreId && profile?.id) {
+                    const { data: su, error: suErr } = await supabase
+                      .from('store_users')
+                      .select('store_id')
+                      .eq('user_id', profile.id)
+                      .eq('is_active', true)
+                      .limit(1)
+                      .maybeSingle()
+                    if (suErr && suErr.code !== 'PGRST116') throw suErr
+                    if (su?.store_id) targetStoreId = su.store_id
+                  }
+                  if (!targetStoreId) {
+                    toast.error('No store found for your account')
+                    return
+                  }
+                  const { data: newCat, error: catErr } = await supabase
+                    .from('categories')
+                    .insert([{ name, store_id: targetStoreId }])
+                    .select()
+                    .single()
+                  if (catErr) throw catErr
+                  setCategoriesData(prev => [...prev, newCat])
+                  setCategoryMap(prev => new Map(prev).set(newCat.id, newCat.name))
+                  setValue('category_id', newCat.id)
+                  toast.success('Category added')
+                  setShowAddCategoryModal(false)
+                  setNewCategoryName('')
+                } catch (e) {
+                  console.error('Failed to add category:', e)
+                  if (e?.code === '42501' || e?.message?.toLowerCase?.().includes('permission') || e?.message?.toLowerCase?.().includes('policy')) {
+                    toast.error('You do not have permission to add categories')
+                  } else {
+                    toast.error('Failed to add category')
+                  }
+                } finally {
+                  setAddingCategory(false)
+                }
+              }}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Delete confirmation */}

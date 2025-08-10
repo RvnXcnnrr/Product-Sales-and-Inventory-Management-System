@@ -21,12 +21,12 @@ const ConfirmDialog = ({
     <Modal isOpen={isOpen} onClose={onCancel} title={title} size="sm">
       <div className="p-6 space-y-5">
         <div className="flex items-start">
-          <div className={`rounded-md p-2 ${isDanger ? 'bg-red-100' : 'bg-blue-100'}`}>
-            <Icon className={`w-5 h-5 ${isDanger ? 'text-red-600' : 'text-blue-600'}`} />
+          <div className={`rounded-md p-2 ${isDanger ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
+            <Icon className={`w-5 h-5 ${isDanger ? 'text-red-600' : 'text-blue-600'} dark:text-current`} />
           </div>
           <div className="ml-3">
             {description && (
-              <p className="text-sm text-gray-700">{description}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{description}</p>
             )}
           </div>
         </div>

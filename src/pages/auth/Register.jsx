@@ -9,7 +9,7 @@ import Modal from '../../components/ui/Modal'
 import Alert from '../../components/ui/Alert'
 import toast from 'react-hot-toast'
 
-const Register = () => {
+const Register = ({ onRequestLogin }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showVerifyModal, setShowVerifyModal] = useState(false)
@@ -111,8 +111,8 @@ const Register = () => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create your account</h2>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
           Set up your POS system in minutes
         </p>
       </div>
@@ -140,7 +140,7 @@ const Register = () => {
             />
           </div>
           {errors.fullName && (
-            <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>
           )}
         </div>
 
@@ -166,7 +166,7 @@ const Register = () => {
             />
           </div>
           {errors.storeName && (
-            <p className="mt-1 text-sm text-red-600">{errors.storeName.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.storeName.message}</p>
           )}
         </div>
 
@@ -192,7 +192,7 @@ const Register = () => {
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
           )}
         </div>
 
@@ -225,7 +225,7 @@ const Register = () => {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
           )}
         </div>
 
@@ -255,7 +255,7 @@ const Register = () => {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>
           )}
         </div>
 
@@ -286,8 +286,8 @@ const Register = () => {
 
         {/* Error message */}
         {errors.root && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-sm text-red-600">{errors.root.message}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400">{errors.root.message}</p>
           </div>
         )}
 
@@ -303,14 +303,13 @@ const Register = () => {
 
       {/* Sign in link */}
       <div className="text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           Already have an account?{' '}
-          <Link
-            to="/login"
-            className="text-primary-600 hover:text-primary-500 font-medium"
-          >
-            Sign in here
-          </Link>
+          {onRequestLogin ? (
+            <button type="button" onClick={onRequestLogin} className="text-primary-500 hover:text-primary-400 font-medium">Sign in here</button>
+          ) : (
+            <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">Sign in here</Link>
+          )}
         </p>
       </div>
 
@@ -321,7 +320,7 @@ const Register = () => {
         title="Verify your email"
         size="md"
       >
-        <div className="p-6 space-y-5">
+  <div className="p-6 space-y-5">
           <Alert
             type="info"
             message={`We've sent a verification link to ${registeredEmail || 'your email address'}. Please confirm your email to be able to log in.`}

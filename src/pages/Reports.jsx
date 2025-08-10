@@ -62,7 +62,7 @@ const Reports = () => {
 
         const txRes = await supabase
           .from('transactions')
-          .select('id, total_amount, processed_at')
+          .select('id, transaction_number, total_amount, processed_at')
           .eq('store_id', profile.store_id)
           .gte('processed_at', fromIso)
           .order('processed_at', { ascending: true })
@@ -197,7 +197,58 @@ const Reports = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-3">
-          <button className="btn btn-secondary btn-md">
+          <button
+            className="btn btn-secondary btn-md"
+            onClick={() => {
+              // Build CSV content for the current Sales report
+              const esc = (v) => {
+                const s = v == null ? '' : String(v)
+                return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+              }
+              const rows = []
+              const nowStr = new Date().toISOString()
+              rows.push(["Sales Report", getDateRangeLabel(), "Generated at", nowStr])
+              rows.push([])
+              // Metrics
+              rows.push(["Metric","Value"]) 
+              rows.push(["Total Sales", Number((metrics.totalSales || 0).toFixed ? metrics.totalSales.toFixed(2) : metrics.totalSales)])
+              rows.push(["Transactions", metrics.totalTransactions])
+              rows.push(["Average Transaction", Number((metrics.averageTransaction || 0).toFixed ? metrics.averageTransaction.toFixed(2) : metrics.averageTransaction)])
+              rows.push([])
+              // Sales trend
+              rows.push(["Sales Trend"]) 
+              rows.push(["Date","Sales","Transactions"]) 
+              for (const d of salesData) {
+                rows.push([d.name, Number(d.sales.toFixed ? d.sales.toFixed(2) : d.sales), d.transactions])
+              }
+              rows.push([])
+              // Top products
+              rows.push(["Top Selling Products"]) 
+              rows.push(["Rank","Product","Units Sold","Revenue"]) 
+              topProducts.forEach((p, idx) => {
+                rows.push([idx+1, p.name, p.sales ?? 0, Number((p.revenue || 0).toFixed ? p.revenue.toFixed(2) : p.revenue)])
+              })
+              rows.push([])
+              // Transactions (limited to current range)
+              rows.push(["Transactions"]) 
+              rows.push(["Transaction #","Total Amount","Processed At"]) 
+              transactions.forEach(t => {
+                rows.push([t.transaction_number || t.id, Number((Number(t.total_amount || 0)).toFixed ? Number(t.total_amount || 0).toFixed(2) : Number(t.total_amount || 0)), new Date(t.processed_at).toISOString()])
+              })
+
+              const csv = rows.map(r => r.map(esc).join(',')).join('\n')
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              const dateTag = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')
+              a.download = `sales-report-${dateTag}.csv`
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </button>

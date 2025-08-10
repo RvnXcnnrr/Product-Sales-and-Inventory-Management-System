@@ -497,6 +497,12 @@ BEGIN
     SET role = EXCLUDED.role,
         is_active = true,
         updated_at = v_now;
+
+  -- Ensure the user's profile points to this store so the UI can scope queries
+  UPDATE public.profiles
+  SET store_id = p_store_id,
+      updated_at = v_now
+  WHERE id = v_target AND (store_id IS NULL OR store_id <> p_store_id);
 END;
 $$;
 
@@ -543,6 +549,12 @@ BEGIN
   END IF;
 
   DELETE FROM public.store_users WHERE store_id = p_store_id AND user_id = p_user_id;
+
+  -- If the user's profile was scoped to this store, clear it
+  UPDATE public.profiles
+  SET store_id = NULL,
+      updated_at = timezone('utc'::text, now())
+  WHERE id = p_user_id AND store_id = p_store_id;
 END;
 $$;
 

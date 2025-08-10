@@ -15,7 +15,7 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -34,7 +34,7 @@ const Layout = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header onMenuClick={toggleSidebar} />
         
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

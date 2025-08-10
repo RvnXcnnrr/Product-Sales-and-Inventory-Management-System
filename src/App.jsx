@@ -17,6 +17,7 @@ const Reports = React.lazy(() => import('./pages/Reports'))
 const Settings = React.lazy(() => import('./pages/Settings'))
 const Profile = React.lazy(() => import('./pages/Profile'))
 const MigrationHelper = React.lazy(() => import('./pages/MigrationHelper'))
+const Landing = React.lazy(() => import('./pages/Landing'))
 
 // Auth components - import directly to avoid lazy loading issues
 const Register = React.lazy(() => import('./pages/auth/Register'))
@@ -31,8 +32,8 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!user) {
-    console.log('ProtectedRoute: No user, redirecting to login')
-    return <Navigate to="/login" replace />
+  console.log('ProtectedRoute: No user, redirecting to landing')
+  return <Navigate to="/landing" replace />
   }
   
   return children
@@ -84,6 +85,13 @@ function App() {
             </PublicRoute>
           } />
 
+          {/* Public Landing Page */}
+          <Route path="/landing" element={
+            <PublicRoute>
+              <Landing />
+            </PublicRoute>
+          } />
+
           {/* Protected Routes */}
           <Route path="/" element={
             <ProtectedRoute>
@@ -102,7 +110,7 @@ function App() {
           </Route>
 
           {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/landing" replace />} />
         </Routes>
       </Suspense>
     </div>
