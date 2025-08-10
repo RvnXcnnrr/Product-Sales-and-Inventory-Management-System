@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 
 const Modal = ({ 
@@ -9,7 +9,25 @@ const Modal = ({
   size = 'md',
   showCloseButton = true 
 }) => {
-  if (!isOpen) return null
+  // Keep mounted for exit animation
+  const [shouldRender, setShouldRender] = useState(isOpen)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true)
+      // Defer to next paint to apply visible classes
+      const id = requestAnimationFrame(() => setVisible(true))
+      return () => cancelAnimationFrame(id)
+    } else {
+      // Start exit animation
+      setVisible(false)
+      const timeout = setTimeout(() => setShouldRender(false), 220) // match durations below
+      return () => clearTimeout(timeout)
+    }
+  }, [isOpen])
+
+  if (!shouldRender) return null
 
   const sizeClasses = {
     sm: 'max-w-md',
@@ -27,10 +45,12 @@ const Modal = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${visible ? 'bg-black/50 opacity-100' : 'bg-black/0 opacity-0'}`}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-fade-in dark:bg-gray-800`}>
+      <div
+        className={`w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden rounded-lg shadow-xl bg-white dark:bg-gray-800 transform transition-all duration-200 ease-out ${visible ? 'opacity-100 translate-y-0 sm:scale-100' : 'opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'}`}
+      >
         {/* Header */}
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
