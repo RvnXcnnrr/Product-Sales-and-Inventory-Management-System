@@ -50,31 +50,22 @@ export const AuthProvider = ({ children }) => {
 
   // Handle auth state updates in a controlled way
   const updateAuthState = useCallback(async (newSession) => {
-    if (authUpdateInProgressRef.current) {
-      return
-    }
+    if (authUpdateInProgressRef.current) return
     try {
       authUpdateInProgressRef.current = true
-      const currentUserId = session?.user?.id
-      const newUserId = newSession?.user?.id
-
-      if (currentUserId !== newUserId) {
-        setSession(newSession)
-        setUser(newSession?.user ?? null)
-
-        if (newSession?.user) {
-          await fetchProfile(newSession.user.id)
-        } else {
-          setProfile(null)
-        }
-      } else if (newSession?.user) {
+      // Always update session and user to keep tokens fresh in state
+      setSession(newSession || null)
+      setUser(newSession?.user ?? null)
+      if (newSession?.user) {
         await fetchProfile(newSession.user.id)
+      } else {
+        setProfile(null)
       }
     } finally {
       authUpdateInProgressRef.current = false
       setLoading(false)
     }
-  }, [session, fetchProfile])
+  }, [fetchProfile])
 
   // Initial session loading and auth listener setup
   useEffect(() => {
@@ -111,11 +102,19 @@ export const AuthProvider = ({ children }) => {
         }
 
         const { data } = client.auth.onAuthStateChange(async (event, newSession) => {
-          if (event === 'TOKEN_REFRESHED') {
-            return
-          }
-          if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) {
-            await updateAuthState(newSession)
+          switch (event) {
+            case 'TOKEN_REFRESHED':
+            case 'SIGNED_IN':
+            case 'USER_UPDATED':
+            case 'INITIAL_SESSION':
+              await updateAuthState(newSession)
+              break
+            case 'SIGNED_OUT':
+              await updateAuthState(null)
+              break
+            default:
+              // Ensure we never stay stuck in loading
+              setLoading(false)
           }
         })
         authListenerRef.current = data.subscription
@@ -131,6 +130,18 @@ export const AuthProvider = ({ children }) => {
       }
     }
   }, [updateAuthState])
+
+  // Watchdog: if loading stays true for too long, clear it to prevent stuck spinners
+  useEffect(() => {
+    if (!loading) return
+    const t = setTimeout(() => {
+      if (loading) {
+        console.warn('[Auth] Loading stuck >8s, forcing clear')
+        setLoading(false)
+      }
+    }, 8000)
+    return () => clearTimeout(t)
+  }, [loading])
 
   // Sign in with email/password
   const signIn = async (email, password) => {

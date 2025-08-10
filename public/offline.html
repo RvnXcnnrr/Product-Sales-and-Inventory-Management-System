@@ -224,8 +224,6 @@
             if (navigator.onLine) {
                 status.textContent = 'Online';
                 status.className = 'connection-status online';
-                // Reload page when back online
-                window.location.reload();
             } else {
                 status.textContent = 'Offline';
                 status.className = 'connection-status';

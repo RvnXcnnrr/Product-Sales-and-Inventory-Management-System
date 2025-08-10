@@ -77,11 +77,18 @@ if (missingEnv) {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
-    flowType: 'implicit', // SPA password flow is fine with implicit
+        flowType: 'implicit', // simpler for email/password; avoids PKCE redirects
       },
       global: {
         headers: {
           'x-app-name': ENV_CONFIG.APP_NAME
+        },
+        fetch: (input, init) => {
+          // Add a timeout wrapper to avoid hanging requests after idle
+          const controller = new AbortController()
+          const id = setTimeout(() => controller.abort(), 12000)
+          return fetch(input, { ...(init || {}), signal: controller.signal })
+            .finally(() => clearTimeout(id))
         }
       },
       realtime: {

@@ -41,28 +41,5 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     
-    <!-- Service Worker cleanup to prevent refresh issues -->
-    <script>
-      // Unregister any existing service workers to fix refresh loops
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            console.log('Unregistering service worker:', registration.scope);
-            registration.unregister();
-          }
-          console.log('All service workers unregistered');
-          
-          // Clear any auth-related storage to prevent refresh issues
-          localStorage.removeItem('supabase.auth.token');
-          localStorage.removeItem('supabase.auth.expires_at');
-          sessionStorage.removeItem('supabase.auth.token');
-          sessionStorage.removeItem('supabase.auth.expires_at');
-          
-          // Remove event listeners that might be causing refresh loops
-          window.removeEventListener('online', () => {});
-          window.removeEventListener('offline', () => {});
-        });
-      }
-    </script>
   </body>
 </html>
