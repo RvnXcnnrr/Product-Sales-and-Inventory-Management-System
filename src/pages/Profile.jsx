@@ -12,15 +12,20 @@ import {
   EyeOff
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import supabase from '../lib/supabase'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import Alert from '../components/ui/Alert'
 
 const Profile = () => {
-  const { profile, updateProfile } = useAuth()
+  const { profile, updateProfile, updateCredentials } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordChangedAt, setPasswordChangedAt] = useState(null)
+  const [passwordNotice, setPasswordNotice] = useState('')
 
   const {
     register,
@@ -47,14 +52,40 @@ const Profile = () => {
   }
 
   const handleChangePassword = async (data) => {
+    const { currentPassword, newPassword } = data || {}
+    if (!profile?.email) {
+      toast.error('Missing email in profile. Please re-login and try again.')
+      return
+    }
+
+    setChangingPassword(true)
     try {
-      // Here you would implement password change logic with Supabase
-      console.log('Changing password:', data)
-      toast.success('Password changed successfully!')
+      // Step 1: Verify current password by re-authenticating (no global loading)
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: currentPassword,
+      })
+      if (verifyError) {
+        toast.error('Current password is incorrect')
+        return
+      }
+
+      // Step 2: Update to the new password (no global loading)
+      const { error: updateErr } = await updateCredentials({ password: newPassword })
+      if (updateErr) {
+        toast.error(updateErr.message || 'Failed to change password')
+        return
+      }
+
+  toast.success('Password changed successfully')
+  setPasswordChangedAt(new Date())
+  setPasswordNotice('Your password has been changed successfully.')
       setShowPasswordForm(false)
       resetPassword()
-    } catch (error) {
-      toast.error('Failed to change password')
+    } catch (e) {
+      toast.error(e?.message || 'Failed to change password')
+    } finally {
+      setChangingPassword(false)
     }
   }
 
@@ -66,10 +97,10 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-          <p className="mt-1 text-sm text-gray-500">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Profile</h1>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage your personal information and account settings
           </p>
         </div>
@@ -93,20 +124,20 @@ const Profile = () => {
                 {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || 'U'}
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {profile?.full_name || 'User Name'}
             </h3>
-            <p className="text-gray-500">{profile?.role || 'Staff'}</p>
-            <p className="text-sm text-gray-500 mt-2">{profile?.email}</p>
+            <p className="text-gray-500 dark:text-gray-400">{profile?.role || 'Staff'}</p>
+            <p className="text-sm text-gray-500 mt-2 dark:text-gray-400">{profile?.email}</p>
             
             <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-center text-sm text-gray-600">
+              <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-300">
                 <Calendar className="w-4 h-4 mr-2" />
                 Joined {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Recently'}
               </div>
               
               {profile?.last_sign_in_at && (
-                <div className="flex items-center justify-center text-sm text-gray-600">
+                <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-300">
                   <User className="w-4 h-4 mr-2" />
                   Last active {new Date(profile.last_sign_in_at).toLocaleDateString()}
                 </div>
@@ -119,9 +150,9 @@ const Profile = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Personal Information */}
           <div className="card">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h3>
                 {isEditing && (
                   <div className="flex space-x-2">
                     <button
@@ -222,8 +253,8 @@ const Profile = () => {
                     <div className="flex items-center space-x-3">
                       <User className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Full Name</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {profile?.full_name || 'Not provided'}
                         </p>
                       </div>
@@ -232,8 +263,8 @@ const Profile = () => {
                     <div className="flex items-center space-x-3">
                       <Mail className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Email Address</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Email Address</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {profile?.email || 'Not provided'}
                         </p>
                       </div>
@@ -242,8 +273,8 @@ const Profile = () => {
                     <div className="flex items-center space-x-3">
                       <Phone className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Phone Number</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {profile?.phone || 'Not provided'}
                         </p>
                       </div>
@@ -252,8 +283,8 @@ const Profile = () => {
                     <div className="flex items-center space-x-3">
                       <User className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Job Title</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Job Title</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {profile?.job_title || 'Not provided'}
                         </p>
                       </div>
@@ -264,8 +295,8 @@ const Profile = () => {
                     <div className="flex items-start space-x-3">
                       <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-sm text-gray-500">Address</p>
-                        <p className="font-medium text-gray-900">{profile.address}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Address</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{profile.address}</p>
                       </div>
                     </div>
                   )}
@@ -276,15 +307,23 @@ const Profile = () => {
 
           {/* Security Settings */}
           <div className="card">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Security</h3>
             </div>
             
             <div className="p-6 space-y-4">
+              {passwordNotice && (
+                <Alert
+                  type="success"
+                  title="Password updated"
+                  message={passwordNotice}
+                  className="mb-2"
+                />
+              )}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Password</p>
-                  <p className="text-sm text-gray-500">Last changed 30 days ago</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Password</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Last changed {passwordChangedAt ? 'just now' : '30 days ago'}</p>
                 </div>
                 <button
                   onClick={() => setShowPasswordForm(!showPasswordForm)}
@@ -295,10 +334,10 @@ const Profile = () => {
               </div>
 
               {showPasswordForm && (
-                <div className="border-t pt-4">
+        <div className="border-t pt-4 dark:border-gray-700">
                   <form onSubmit={handlePasswordSubmit(handleChangePassword)} className="space-y-4">
                     <div>
-                      <label className="label">Current Password</label>
+            <label className="label">Current Password</label>
                       <div className="relative">
                         <input
                           type={showCurrentPassword ? 'text' : 'password'}
@@ -311,7 +350,7 @@ const Profile = () => {
                         <button
                           type="button"
                           onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
                           {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
@@ -339,7 +378,7 @@ const Profile = () => {
                         <button
                           type="button"
                           onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
                           {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
@@ -378,19 +417,20 @@ const Profile = () => {
                       </button>
                       <button
                         type="submit"
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm disabled:opacity-60"
+                        disabled={changingPassword}
                       >
-                        Update Password
+                        {changingPassword ? 'Updating...' : 'Update Password'}
                       </button>
                     </div>
                   </form>
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center justify-between pt-4 border-t dark:border-gray-700">
                 <div>
-                  <p className="font-medium text-gray-900">Two-Factor Authentication</p>
-                  <p className="text-sm text-gray-500">Add extra security to your account</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Two-Factor Authentication</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Add extra security to your account</p>
                 </div>
                 <button className="btn btn-secondary btn-sm">
                   Enable 2FA
@@ -401,34 +441,34 @@ const Profile = () => {
 
           {/* Activity Log */}
           <div className="card">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
             </div>
             
             <div className="p-6">
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-900">Signed in from new device</span>
-                  <span className="text-gray-500">2 hours ago</span>
+                  <span className="text-gray-900 dark:text-gray-100">Signed in from new device</span>
+                  <span className="text-gray-500 dark:text-gray-400">2 hours ago</span>
                 </div>
                 
                 <div className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-900">Updated profile information</span>
-                  <span className="text-gray-500">1 day ago</span>
+                  <span className="text-gray-900 dark:text-gray-100">Updated profile information</span>
+                  <span className="text-gray-500 dark:text-gray-400">1 day ago</span>
                 </div>
                 
                 <div className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-gray-900">Changed password</span>
-                  <span className="text-gray-500">3 days ago</span>
+                  <span className="text-gray-900 dark:text-gray-100">Changed password</span>
+                  <span className="text-gray-500 dark:text-gray-400">3 days ago</span>
                 </div>
                 
                 <div className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-gray-900">Signed in from Chrome on Windows</span>
-                  <span className="text-gray-500">1 week ago</span>
+                  <span className="text-gray-900 dark:text-gray-100">Signed in from Chrome on Windows</span>
+                  <span className="text-gray-500 dark:text-gray-400">1 week ago</span>
                 </div>
               </div>
             </div>

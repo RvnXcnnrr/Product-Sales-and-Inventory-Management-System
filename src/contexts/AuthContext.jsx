@@ -133,15 +133,16 @@ export const AuthProvider = ({ children }) => {
 
   // Watchdog: if loading stays true for too long, clear it to prevent stuck spinners
   useEffect(() => {
-    if (!loading) return
+    // Only apply watchdog during initial bootstrap to prevent interfering with user actions
+    if (!loading || authStateLoaded) return
     const t = setTimeout(() => {
-      if (loading) {
+      if (loading && !authStateLoaded) {
         console.warn('[Auth] Loading stuck >8s, forcing clear')
         setLoading(false)
       }
     }, 8000)
     return () => clearTimeout(t)
-  }, [loading])
+  }, [loading, authStateLoaded])
 
   // Sign in with email/password
   const signIn = async (email, password) => {
@@ -282,23 +283,17 @@ export const AuthProvider = ({ children }) => {
   // Update user email or password
   const updateCredentials = async (credentials) => {
     try {
-      setLoading(true);
       console.log('🔐 Updating user credentials');
-      
       const { data, error } = await client.auth.updateUser(credentials);
-      
       if (error) {
         console.error('❌ Credentials update failed:', error.message);
         throw error;
       }
-      
       console.log('✅ Credentials updated successfully');
       return { data, error: null };
     } catch (error) {
       console.error('💥 Credentials update exception:', error);
       return { data: null, error };
-    } finally {
-      setLoading(false);
     }
   };
 

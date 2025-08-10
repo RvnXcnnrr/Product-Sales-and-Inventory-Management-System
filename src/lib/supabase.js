@@ -86,7 +86,7 @@ if (missingEnv) {
         fetch: (input, init) => {
           // Add a timeout wrapper to avoid hanging requests after idle
           const controller = new AbortController()
-          const id = setTimeout(() => controller.abort(), 12000)
+          const id = setTimeout(() => controller.abort(), 20000)
           return fetch(input, { ...(init || {}), signal: controller.signal })
             .finally(() => clearTimeout(id))
         }
