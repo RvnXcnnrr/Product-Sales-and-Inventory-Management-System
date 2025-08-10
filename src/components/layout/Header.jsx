@@ -25,6 +25,7 @@ const Header = ({ onMenuClick }) => {
       <div className="flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center">
+          <img src="/icons/logo-mark.svg" alt="POS" className="themed-logo hidden md:block w-8 h-8 mr-3" />
           <button
             onClick={onMenuClick}
             className="text-gray-500 hover:text-gray-600 lg:hidden dark:text-gray-300 dark:hover:text-white"

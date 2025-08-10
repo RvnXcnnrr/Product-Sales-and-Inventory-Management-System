@@ -15,6 +15,12 @@
   html {
     @apply scroll-smooth;
   }
+    /* Auto-switch logo assets for dark mode when using <img class="themed-logo" src="/icons/logo-mark.svg"> */
+    @media (prefers-color-scheme: dark) {
+      img.themed-logo[src$="logo-mark.svg"] {
+        content: url('/icons/logo-mark-dark.svg');
+      }
+    }
 }
 
 /* Custom Components */

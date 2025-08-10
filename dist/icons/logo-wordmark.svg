@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="640" height="160" viewBox="0 0 640 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="POS System wordmark">
+  <defs>
+    <linearGradient id="gw" x1="0" y1="0" x2="640" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mark -->
+  <g transform="translate(8,8)">
+    <rect x="0" y="0" width="144" height="144" rx="24" fill="url(#gw)"/>
+    <g fill="#fff" opacity="0.95" transform="translate(40,28)">
+      <rect x="6" y="54" width="14" height="42" rx="5"/>
+      <rect x="32" y="34" width="14" height="62" rx="5"/>
+      <rect x="58" y="16" width="14" height="80" rx="5"/>
+    </g>
+    <g stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(16,0)">
+      <path d="M16 112 H112" opacity="0.9"/>
+      <circle cx="44" cy="124" r="7" fill="#fff"/>
+      <circle cx="92" cy="124" r="7" fill="#fff"/>
+      <path d="M16 60 L34 42" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(176,34)">
+    <text x="0" y="48" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji'" font-weight="800" font-size="44" fill="#0F172A">POS System</text>
+    <text x="0" y="88" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans'" font-weight="600" font-size="20" fill="#334155">Sales • Inventory • Reports</text>
+  </g>
+</svg>

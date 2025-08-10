@@ -13,6 +13,18 @@
   "scope": "/",
   "icons": [
     {
+      "src": "/icons/logo-mark.svg",
+      "sizes": "256x256",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/logo-mark-dark.svg",
+      "sizes": "256x256",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "/icons/icon-72x72.svg",
       "sizes": "72x72",
       "type": "image/svg+xml",

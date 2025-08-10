@@ -7,8 +7,7 @@ import {
   Warehouse, 
   BarChart3, 
   Settings,
-  X,
-  Store
+  X
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -34,10 +33,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               {/* Logo */}
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <Store className="w-8 h-8 text-primary-600" />
-                <span className="ml-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-                  POS System
-                </span>
+                <img src="/icons/logo-mark.svg" alt="POS" className="themed-logo w-8 h-8" />
+                <span className="ml-2 text-xl font-bold text-gray-900 dark:text-gray-100">POS System</span>
               </div>
 
               {/* Navigation */}
@@ -92,10 +89,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <Store className="w-6 h-6 text-primary-600" />
-              <span className="ml-2 text-lg font-bold text-gray-900 dark:text-gray-100">
-                POS System
-              </span>
+              <img src="/icons/logo-mark.svg" alt="POS" className="themed-logo w-6 h-6" />
+              <span className="ml-2 text-lg font-bold text-gray-900 dark:text-gray-100">POS System</span>
             </div>
             <button
               onClick={onClose}
