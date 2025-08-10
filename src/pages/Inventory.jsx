@@ -233,8 +233,8 @@ const Inventory = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Inventory Management</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
             Monitor and manage your stock levels
           </p>
         </div>
@@ -261,8 +261,8 @@ const Inventory = () => {
               <Package className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900">{inventory.length}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Products</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{inventory.length}</p>
             </div>
           </div>
         </div>
@@ -273,8 +273,8 @@ const Inventory = () => {
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalValue)}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Value</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalValue)}</p>
             </div>
           </div>
         </div>
@@ -285,8 +285,8 @@ const Inventory = () => {
               <AlertTriangle className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Low Stock</p>
-              <p className="text-2xl font-bold text-gray-900">{lowStockCount}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Low Stock</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{lowStockCount}</p>
             </div>
           </div>
         </div>
@@ -297,8 +297,8 @@ const Inventory = () => {
               <TrendingDown className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Out of Stock</p>
-              <p className="text-2xl font-bold text-gray-900">{outOfStockCount}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Out of Stock</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{outOfStockCount}</p>
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@ const Inventory = () => {
       <div className="card p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by product name or SKU..."
@@ -344,44 +344,44 @@ const Inventory = () => {
       {/* Inventory Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="table-header">
               <tr>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Product
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Current Stock
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Min/Max
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Value
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Location
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredInventory.map((item) => {
                 const stockStatus = getStockStatus(item)
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50">
+      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="table-cell">
                       <div>
-                        <div className="font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500 font-mono">{item.sku}</div>
+        <div className="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">{item.sku}</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -399,7 +399,7 @@ const Inventory = () => {
                     <td className="table-cell">
                       <div className="text-sm">
                         <div className="font-medium">{formatCurrency(item.total_value)}</div>
-                        <div className="text-gray-500">{formatCurrency(item.cost_price)} each</div>
+        <div className="text-gray-500 dark:text-gray-400">{formatCurrency(item.cost_price)} each</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -431,9 +431,9 @@ const Inventory = () => {
 
   {filteredInventory.length === 0 && !loading && !error && (
           <div className="text-center py-12">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No inventory found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No inventory found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filters</p>
           </div>
   )}
       </div>
@@ -451,10 +451,10 @@ const Inventory = () => {
       >
   {selectedProduct && (
           <form onSubmit={handleSubmit(handleStockUpdate)} className="p-6 space-y-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">{selectedProduct.name}</h3>
-              <p className="text-sm text-gray-500">SKU: {selectedProduct.sku}</p>
-              <p className="text-sm text-gray-500">Current Stock: {selectedProduct.current_stock}</p>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{selectedProduct.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">SKU: {selectedProduct.sku}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Current Stock: {selectedProduct.current_stock}</p>
             </div>
 
             <div>
@@ -556,7 +556,7 @@ const Inventory = () => {
         <div className="p-6">
           <div className="space-y-4">
             {inventoryLogs.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={entry.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className={`p-2 rounded-lg ${entry.quantity_change >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
                     {entry.quantity_change >= 0 ? (
@@ -566,16 +566,16 @@ const Inventory = () => {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{entry.product?.name || 'Product'}</p>
-                    <p className="text-sm text-gray-500">{entry.reason || 'Adjustment'}</p>
-                    <p className="text-sm text-gray-500">{entry.quantity_change >= 0 ? 'Increase' : 'Decrease'}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{entry.product?.name || 'Product'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{entry.reason || 'Adjustment'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{entry.quantity_change >= 0 ? 'Increase' : 'Decrease'}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className={`font-medium ${entry.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {entry.quantity_change > 0 ? '+' : ''}{entry.quantity_change}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(entry.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -585,8 +585,8 @@ const Inventory = () => {
 
           {inventoryLogs.length === 0 && (
             <div className="text-center py-8">
-              <History className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No stock movements recorded</p>
+              <History className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No stock movements recorded</p>
             </div>
           )}
         </div>

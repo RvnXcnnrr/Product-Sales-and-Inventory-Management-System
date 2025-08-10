@@ -194,8 +194,8 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
             Overview of your store performance
           </p>
         </div>
@@ -226,9 +226,9 @@ const Dashboard = () => {
                 <stat.icon className="w-6 h-6 text-white" />
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stat.title}</p>
                 <div className="flex items-center mt-1">
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   <span className={`ml-2 text-sm font-medium ${
                     stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
                   }`}>
@@ -245,10 +245,10 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions */}
         <div className="lg:col-span-2">
-          <div className="card">
-            <div className="p-6 border-b border-gray-200">
+      <div className="card">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Transactions</h3>
                 <Link
                   to="/reports"
                   className="text-sm text-primary-600 hover:text-primary-500 flex items-center"
@@ -260,40 +260,40 @@ const Dashboard = () => {
             </div>
             <div className="overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="table-header">
                     <tr>
-                      <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Customer
                       </th>
-                      <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Amount
                       </th>
-                      <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Items
                       </th>
-                      <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Time
                       </th>
-                      <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {recentTransactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50">
+            <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="table-cell">
-                          <div className="font-medium text-gray-900">{transaction.customer}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">{transaction.customer}</div>
                         </td>
                         <td className="table-cell">
-                          <div className="font-medium text-gray-900">{currencyFormatter.format(transaction.amount)}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">{currencyFormatter.format(transaction.amount)}</div>
                         </td>
                         <td className="table-cell">
-                          <div className="text-gray-900">{transaction.items} items</div>
+              <div className="text-gray-900 dark:text-gray-100">{transaction.items} items</div>
                         </td>
                         <td className="table-cell">
-                          <div className="text-gray-500">{transaction.time}</div>
+              <div className="text-gray-500 dark:text-gray-300">{transaction.time}</div>
                         </td>
                         <td className="table-cell">
                           <span className="badge badge-success">
@@ -312,9 +312,9 @@ const Dashboard = () => {
         {/* Low Stock Alert */}
         <div className="space-y-6">
           <div className="card">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Low Stock Alert</h3>
                 <Link
                   to="/inventory"
                   className="text-sm text-primary-600 hover:text-primary-500 flex items-center"
@@ -327,15 +327,15 @@ const Dashboard = () => {
             <div className="p-6">
               <div className="space-y-4">
                 {lowStockProducts.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div key={product.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{product.name}</p>
-                      <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{product.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">SKU: {product.sku}</p>
                       <div className="flex items-center mt-1">
-                        <span className="text-sm text-red-600 font-medium">
+                        <span className="text-sm text-red-600 dark:text-red-400 font-medium">
                           {product.currentStock} in stock
                         </span>
-                        <span className="text-sm text-gray-500 ml-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
                           (min: {product.minStock})
                         </span>
                       </div>
@@ -351,8 +351,8 @@ const Dashboard = () => {
 
           {/* Quick Actions */}
           <div className="card">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h3>
             </div>
             <div className="p-6">
               <div className="space-y-3">

@@ -468,8 +468,8 @@ const Products = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Products</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
             Manage your product catalog and inventory
           </p>
         </div>
@@ -512,44 +512,44 @@ const Products = () => {
       {/* Products Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="table-header">
               <tr>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Product
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   SKU
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Price
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Stock
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr><td className="table-cell p-6" colSpan="7">Loading...</td></tr>
               ) : error ? (
-                <tr><td className="table-cell p-6 text-red-600" colSpan="7">{error}</td></tr>
+                <tr><td className="table-cell p-6 text-red-600 dark:text-red-400" colSpan="7">{error}</td></tr>
               ) : filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product)
                 return (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="table-cell">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3">
                           {product.image_url ? (
                             <img 
                               src={product.image_url} 
@@ -557,12 +557,12 @@ const Products = () => {
                               className="w-full h-full object-cover rounded-lg"
                             />
                           ) : (
-                            <Package className="w-5 h-5 text-gray-400" />
+                            <Package className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                             {product.description}
                           </div>
                         </div>
@@ -577,13 +577,13 @@ const Products = () => {
                     <td className="table-cell">
                       <div className="text-sm">
                         <div className="font-medium">{formatCurrency(product.selling_price)}</div>
-                        <div className="text-gray-500">Cost: {formatCurrency(product.cost_price)}</div>
+                        <div className="text-gray-500 dark:text-gray-400">Cost: {formatCurrency(product.cost_price)}</div>
                       </div>
                     </td>
                     <td className="table-cell">
                       <div className="text-sm">
                         <div className="font-medium">{product.stock_quantity}</div>
-                        <div className="text-gray-500">Min: {product.min_stock_level}</div>
+                        <div className="text-gray-500 dark:text-gray-400">Min: {product.min_stock_level}</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -596,7 +596,7 @@ const Products = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setViewingProduct(product)}
-                          className="text-gray-400 hover:text-blue-600 transition-colors"
+                          className="text-gray-400 dark:text-gray-500 hover:text-blue-600 transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -606,14 +606,14 @@ const Products = () => {
                             setEditingProduct(product)
                             reset(product)
                           }}
-                          className="text-gray-400 hover:text-green-600 transition-colors"
+                          className="text-gray-400 dark:text-gray-500 hover:text-green-600 transition-colors"
                           title="Edit Product"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="text-gray-400 hover:text-red-600 transition-colors"
+                          className="text-gray-400 dark:text-gray-500 hover:text-red-600 transition-colors"
                           title="Delete Product"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -629,9 +629,9 @@ const Products = () => {
 
   {filteredProducts.length === 0 && !loading && !error && (
           <div className="text-center py-12">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your search or add a new product</p>
+            <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No products found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or add a new product</p>
           </div>
         )}
       </div>
@@ -685,7 +685,7 @@ const Products = () => {
         {viewingProduct && (
           <div className="p-6 space-y-6">
             <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                 {viewingProduct.image_url ? (
                   <img 
                     src={viewingProduct.image_url} 
@@ -693,12 +693,12 @@ const Products = () => {
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <Package className="w-8 h-8 text-gray-400" />
+                  <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                 )}
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{viewingProduct.name}</h3>
-                <p className="text-gray-500">{categoryMap.get(viewingProduct.category_id) || 'Uncategorized'}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{viewingProduct.name}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{categoryMap.get(viewingProduct.category_id) || 'Uncategorized'}</p>
               </div>
             </div>
 
@@ -712,31 +712,31 @@ const Products = () => {
                 <p className="font-mono">{viewingProduct.barcode || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Cost Price</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Cost Price</label>
                 <p>{formatCurrency(viewingProduct.cost_price)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Selling Price</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Selling Price</label>
                 <p className="font-semibold">{formatCurrency(viewingProduct.selling_price)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Stock Quantity</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Stock Quantity</label>
                 <p>{viewingProduct.stock_quantity}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Min Stock Level</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Min Stock Level</label>
                 <p>{viewingProduct.min_stock_level}</p>
               </div>
             </div>
 
             {viewingProduct.description && (
               <div>
-                <label className="text-sm font-medium text-gray-500">Description</label>
-                <p className="text-gray-900">{viewingProduct.description}</p>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
+                <p className="text-gray-900 dark:text-gray-100">{viewingProduct.description}</p>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400">
               <div>
                 <label className="font-medium">Created</label>
                 <p>{new Date(viewingProduct.created_at).toLocaleDateString()}</p>

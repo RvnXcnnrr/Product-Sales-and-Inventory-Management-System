@@ -400,10 +400,10 @@ const Settings = () => {
         : members
     ), [members, currentUserMember, profile?.id])
 
-    return (
+  return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">User Management</h3>
         </div>
 
         <div className="card p-4">
@@ -436,32 +436,32 @@ const Settings = () => {
                 <Users className="w-4 h-4 mr-2" />
                 Add User
               </button>
-              {!isOwnerOrManager && (
-                <p className="text-xs text-gray-500 mt-2">Only owners or managers can add users.</p>
+        {!isOwnerOrManager && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Only owners or managers can add users.</p>
               )}
             </div>
           </div>
         </div>
 
         <div className="card overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="table-header">
               <tr>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="table-cell text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+        <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+        <th className="table-cell text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {displayMembers.map((m) => (
-                <tr key={m.user_id}>
+        <tr key={m.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="table-cell">
-                    <div className="font-medium text-gray-900">{m.full_name || '—'}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">{m.full_name || '—'}</div>
                   </td>
                   <td className="table-cell">
-                    <div className="text-sm text-gray-600">{m.email}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">{m.email}</div>
                   </td>
                   <td className="table-cell">
                     <select
@@ -494,7 +494,7 @@ const Settings = () => {
               ))}
               {displayMembers.length === 0 && (
                 <tr>
-                  <td className="table-cell text-center text-gray-500 py-6" colSpan={5}>
+          <td className="table-cell text-center text-gray-500 dark:text-gray-400 py-6" colSpan={5}>
                     {busy ? 'Loading members…' : 'No users found for this store.'}
                   </td>
                 </tr>
@@ -504,12 +504,12 @@ const Settings = () => {
         </div>
 
         <div className="card p-6">
-          <h4 className="text-md font-semibold text-gray-900 mb-4">Role Permissions</h4>
+      <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">Role Permissions</h4>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="card p-4">
-                <h5 className="font-medium text-gray-900 mb-2">Owner</h5>
-                <ul className="text-sm text-gray-600 space-y-1">
+        <h5 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Owner</h5>
+        <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                   <li>• Full system access</li>
                   <li>• Manage users & settings</li>
                   <li>• View all reports</li>
@@ -517,8 +517,8 @@ const Settings = () => {
                 </ul>
               </div>
               <div className="card p-4">
-                <h5 className="font-medium text-gray-900 mb-2">Manager</h5>
-                <ul className="text-sm text-gray-600 space-y-1">
+        <h5 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Manager</h5>
+        <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                   <li>• Manage products & inventory</li>
                   <li>• View reports</li>
                   <li>• Process transactions</li>
@@ -526,8 +526,8 @@ const Settings = () => {
                 </ul>
               </div>
               <div className="card p-4">
-                <h5 className="font-medium text-gray-900 mb-2">Staff</h5>
-                <ul className="text-sm text-gray-600 space-y-1">
+        <h5 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Staff</h5>
+        <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                   <li>• Process transactions</li>
                   <li>• View product catalog</li>
                   <li>• Basic reporting</li>
@@ -544,14 +544,14 @@ const Settings = () => {
   const PaymentSettings = () => (
     <div className="space-y-6">
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Payment Methods</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center space-x-3">
-              <CreditCard className="w-6 h-6 text-gray-600" />
+              <CreditCard className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Cash Payments</p>
-                <p className="text-sm text-gray-500">Accept cash transactions</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Cash Payments</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Accept cash transactions</p>
               </div>
             </div>
             <label className="flex items-center">
@@ -561,10 +561,10 @@ const Settings = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center space-x-3">
-              <CreditCard className="w-6 h-6 text-gray-600" />
+              <CreditCard className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Credit/Debit Cards</p>
-                <p className="text-sm text-gray-500">Accept card payments</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Credit/Debit Cards</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Accept card payments</p>
               </div>
             </div>
             <label className="flex items-center">
@@ -574,10 +574,10 @@ const Settings = () => {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center space-x-3">
-              <Globe className="w-6 h-6 text-gray-600" />
+              <Globe className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Digital Wallets</p>
-                <p className="text-sm text-gray-500">Apple Pay, Google Pay, etc.</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Digital Wallets</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Apple Pay, Google Pay, etc.</p>
               </div>
             </div>
             <label className="flex items-center">
@@ -588,12 +588,12 @@ const Settings = () => {
       </div>
 
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Receipt Settings</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receipt Settings</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Print Receipt Automatically</p>
-              <p className="text-sm text-gray-500">Auto-print receipt after each transaction</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">Print Receipt Automatically</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Auto-print receipt after each transaction</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -602,8 +602,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Email Receipt Option</p>
-              <p className="text-sm text-gray-500">Offer to email receipts to customers</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">Email Receipt Option</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Offer to email receipts to customers</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -612,8 +612,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Receipt Logo</p>
-              <p className="text-sm text-gray-500">Include store logo on receipts</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">Receipt Logo</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Include store logo on receipts</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -627,12 +627,12 @@ const Settings = () => {
   const NotificationSettings = () => (
     <div className="space-y-6">
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Alert Preferences</h3>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Alert Preferences</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Low Stock Alerts</p>
-              <p className="text-sm text-gray-500">Get notified when products are running low</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Low Stock Alerts</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when products are running low</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -641,8 +641,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Daily Sales Summary</p>
-              <p className="text-sm text-gray-500">Receive daily sales reports via email</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Daily Sales Summary</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Receive daily sales reports via email</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -651,8 +651,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">System Updates</p>
-              <p className="text-sm text-gray-500">Get notified about system updates and maintenance</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">System Updates</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified about system updates and maintenance</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -666,20 +666,20 @@ const Settings = () => {
   const SecuritySettings = () => (
     <div className="space-y-6">
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Authentication</h3>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Authentication</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Two-Factor Authentication</p>
-              <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Two-Factor Authentication</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security to your account</p>
             </div>
             <button className="btn btn-secondary btn-sm">Enable</button>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Session Timeout</p>
-              <p className="text-sm text-gray-500">Automatically log out inactive users</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Session Timeout</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Automatically log out inactive users</p>
             </div>
             <select className="input w-32">
               <option value="30">30 minutes</option>
@@ -691,8 +691,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Password Policy</p>
-              <p className="text-sm text-gray-500">Enforce strong password requirements</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Password Policy</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Enforce strong password requirements</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -702,12 +702,12 @@ const Settings = () => {
       </div>
 
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Backup</h3>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Data Backup</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Automatic Backup</p>
-              <p className="text-sm text-gray-500">Daily automatic backup of your data</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Automatic Backup</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Daily automatic backup of your data</p>
             </div>
             <label className="flex items-center">
               <input type="checkbox" defaultChecked className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" />
@@ -716,8 +716,8 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Last Backup</p>
-              <p className="text-sm text-gray-500">January 25, 2024 at 2:30 AM</p>
+      <p className="font-medium text-gray-900 dark:text-gray-100">Last Backup</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">January 25, 2024 at 2:30 AM</p>
             </div>
             <button className="btn btn-secondary btn-sm">
               <Database className="w-4 h-4 mr-1" />
@@ -732,14 +732,14 @@ const Settings = () => {
   const SystemSettings = () => (
     <div className="space-y-6">
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Hardware Configuration</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Hardware Configuration</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Printer className="w-6 h-6 text-gray-600" />
+              <Printer className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Receipt Printer</p>
-                <p className="text-sm text-gray-500">EPSON TM-T20III - Connected</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Receipt Printer</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">EPSON TM-T20III - Connected</p>
               </div>
             </div>
             <button className="btn btn-secondary btn-sm">Configure</button>
@@ -747,10 +747,10 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <CreditCard className="w-6 h-6 text-gray-600" />
+              <CreditCard className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Card Reader</p>
-                <p className="text-sm text-gray-500">Square Reader - Not Connected</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Card Reader</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Square Reader - Not Connected</p>
               </div>
             </div>
             <button className="btn btn-secondary btn-sm">Setup</button>
@@ -758,10 +758,10 @@ const Settings = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Wifi className="w-6 h-6 text-gray-600" />
+              <Wifi className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Internet Connection</p>
-                <p className="text-sm text-gray-500">Connected - Good Signal</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">Internet Connection</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Connected - Good Signal</p>
               </div>
             </div>
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -770,22 +770,22 @@ const Settings = () => {
       </div>
 
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">System Information</h3>
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-600">Version:</span>
+            <span className="text-gray-600 dark:text-gray-300">Version:</span>
             <span className="font-medium">v1.0.0</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Database:</span>
+            <span className="text-gray-600 dark:text-gray-300">Database:</span>
             <span className="font-medium">PostgreSQL 14.0</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Storage Used:</span>
+            <span className="text-gray-600 dark:text-gray-300">Storage Used:</span>
             <span className="font-medium">2.3 GB / 10 GB</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Last Update:</span>
+            <span className="text-gray-600 dark:text-gray-300">Last Update:</span>
             <span className="font-medium">January 20, 2024</span>
           </div>
         </div>
@@ -809,8 +809,8 @@ const Settings = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
           Configure your store settings and preferences
         </p>
       </div>
@@ -824,10 +824,10 @@ const Settings = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+        className={`whitespace-nowrap flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 <Icon className="w-4 h-4 mr-2" />

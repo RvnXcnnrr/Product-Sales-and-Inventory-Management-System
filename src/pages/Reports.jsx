@@ -191,8 +191,8 @@ const Reports = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Reports & Analytics</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
             Insights into your business performance
           </p>
         </div>
@@ -295,9 +295,9 @@ const Reports = () => {
               <DollarSign className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Sales</p>
-      <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalSales || 0)}</p>
-      <p className="text-sm text-gray-500">{getDateRangeLabel()}</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sales</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(metrics.totalSales || 0)}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{getDateRangeLabel()}</p>
             </div>
           </div>
         </div>
@@ -308,8 +308,8 @@ const Reports = () => {
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Transactions</p>
-              <p className="text-2xl font-bold text-gray-900">{metrics.totalTransactions}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Transactions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.totalTransactions}</p>
               <p className="text-sm text-blue-600">+8.3% from last period</p>
             </div>
           </div>
@@ -321,9 +321,9 @@ const Reports = () => {
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg. Transaction</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.averageTransaction || 0)}</p>
-              <p className="text-sm text-gray-500">{getDateRangeLabel()}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Avg. Transaction</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(metrics.averageTransaction || 0)}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{getDateRangeLabel()}</p>
             </div>
           </div>
         </div>
@@ -334,9 +334,9 @@ const Reports = () => {
               <Package className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900">{metrics.totalProducts}</p>
-              <p className="text-sm text-gray-500">{metrics.lowStockItems} low stock</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Products</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.totalProducts}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{metrics.lowStockItems} low stock</p>
             </div>
           </div>
         </div>
@@ -346,9 +346,9 @@ const Reports = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Trend */}
         <div className="card">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Sales Trend</h3>
-            <p className="text-sm text-gray-500">{getDateRangeLabel()}</p>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sales Trend</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{getDateRangeLabel()}</p>
           </div>
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
@@ -376,9 +376,9 @@ const Reports = () => {
 
         {/* Category Distribution */}
         <div className="card">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Sales by Category</h3>
-            <p className="text-sm text-gray-500">Distribution of sales across categories</p>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sales by Category</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Distribution of sales across categories</p>
           </div>
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
@@ -406,9 +406,9 @@ const Reports = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
         <div className="card">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Top Selling Products</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Selling Products</h3>
               <button className="text-sm text-primary-600 hover:text-primary-500 flex items-center">
                 <Eye className="w-4 h-4 mr-1" />
                 View All
@@ -416,29 +416,29 @@ const Reports = () => {
             </div>
           </div>
           <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="table-header">
                 <tr>
-                  <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Product
                   </th>
-                  <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Sales
                   </th>
-                  <th className="table-cell text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-cell text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Revenue
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
         {topProducts.map((product, index) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="table-cell">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                          <span className="text-sm font-bold text-gray-600">#{index + 1}</span>
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3">
+                          <span className="text-sm font-bold text-gray-600 dark:text-gray-400">#{index + 1}</span>
                         </div>
-                        <div className="font-medium text-gray-900">{product.name}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -456,8 +456,8 @@ const Reports = () => {
 
         {/* Recent Activity */}
         <div className="card">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -465,12 +465,12 @@ const Reports = () => {
                 .sort((a, b) => new Date(b.processed_at) - new Date(a.processed_at))
                 .slice(0, 4)).map((t) => (
                 <div key={t.id} className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                     <ShoppingCart className="w-4 h-4 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">Sale completed</p>
-                    <p className="text-xs text-gray-500">{formatCurrency(Number(t.total_amount || 0))} • {new Date(t.processed_at).toLocaleString()}</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">Sale completed</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(Number(t.total_amount || 0))} • {new Date(t.processed_at).toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -481,9 +481,9 @@ const Reports = () => {
 
       {/* Daily Sales Chart */}
       <div className="card">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Daily Sales Overview</h3>
-          <p className="text-sm text-gray-500">Sales and transaction volume comparison</p>
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Sales Overview</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Sales and transaction volume comparison</p>
         </div>
         <div className="p-6">
           <ResponsiveContainer width="100%" height={400}>

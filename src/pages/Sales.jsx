@@ -233,9 +233,9 @@ const Sales = () => {
       {/* Product Selection */}
       <div className="flex-1 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Point of Sale</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Point of Sale</h1>
           <div className="mt-4 sm:mt-0">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-300">
               {filteredProducts.length} products available
             </span>
           </div>
@@ -244,7 +244,7 @@ const Sales = () => {
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search products by name, SKU, or barcode..."
@@ -271,10 +271,10 @@ const Sales = () => {
           {loading ? (
             <div className="col-span-full py-12"><LoadingSpinner /></div>
           ) : error ? (
-            <div className="col-span-full text-center text-red-600 py-6">{error}</div>
+            <div className="col-span-full text-center text-red-600 dark:text-red-400 py-6">{error}</div>
           ) : filteredProducts.map((product) => (
             <div key={product.id} className="card p-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
+              <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg mb-3 flex items-center justify-center">
                 {product.image_url ? (
                   <img 
                     src={product.image_url} 
@@ -282,17 +282,17 @@ const Sales = () => {
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="text-gray-400 text-4xl">📦</div>
+                  <div className="text-gray-400 dark:text-gray-500 text-4xl">📦</div>
                 )}
               </div>
               
-              <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
-              <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">{product.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">SKU: {product.sku}</p>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-lg font-bold text-primary-600">
                   {formatCurrency(product.selling_price)}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {product.stock_quantity} in stock
                 </span>
               </div>
@@ -311,9 +311,9 @@ const Sales = () => {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">🔍</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">🔍</div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No products found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filters</p>
           </div>
         )}
       </div>
@@ -322,9 +322,9 @@ const Sales = () => {
       <div className="lg:w-80 xl:w-96">
         <div className="card h-full flex flex-col">
           {/* Cart Header */}
-          <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 Cart ({totals.itemCount})
               </h2>
@@ -343,27 +343,27 @@ const Sales = () => {
           <div className="flex-1 overflow-y-auto p-4">
             {cart.items.length === 0 ? (
               <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Your cart is empty</p>
-                <p className="text-sm text-gray-400">Add products to get started</p>
+                <ShoppingCart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">Your cart is empty</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">Add products to get started</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {cart.items.map((item) => (
-                  <div key={item.product_id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <div key={item.product_id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
                       <span className="text-xl">📦</span>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-                                            <p className="text-sm text-gray-500">{formatCurrency(item.price)} each</p>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</h4>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">{formatCurrency(item.price)} each</p>
                     </div>
                     
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleQuantityChange(item.product_id, item.quantity - 1)}
-                        className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                        className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
@@ -372,7 +372,7 @@ const Sales = () => {
                       
                       <button
                         onClick={() => handleQuantityChange(item.product_id, item.quantity + 1)}
-                        className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                        className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -380,7 +380,7 @@ const Sales = () => {
                     
                     <button
                       onClick={() => setConfirmRemoveItemId(item.product_id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -393,13 +393,13 @@ const Sales = () => {
           {/* Cart Summary */}
           {cart.items.length > 0 && (
             <>
-              <div className="border-t border-gray-200 p-4 space-y-2">
+              <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(totals.subtotal)}</span>
                 </div>
                 {totals.discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span>Discount ({totals.discount}%):</span>
                     <span>-{formatCurrency(totals.discountAmount)}</span>
                   </div>
@@ -408,7 +408,7 @@ const Sales = () => {
                   <span>Tax ({totals.taxRate}%):</span>
                   <span>{formatCurrency(totals.taxAmount)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <div className="flex justify-between text-lg font-bold border-t dark:border-gray-700 pt-2">
                   <span>Total:</span>
                   <span>{formatCurrency(totals.total)}</span>
                 </div>
@@ -437,15 +437,15 @@ const Sales = () => {
       >
         <div className="p-6 space-y-6">
           {/* Order Summary */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 mb-3">Order Summary</h3>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Order Summary</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
                 <span>{formatCurrency(totals.subtotal)}</span>
               </div>
               {totals.discount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-green-600 dark:text-green-400">
                   <span>Discount:</span>
                   <span>-{formatCurrency(totals.discountAmount)}</span>
                 </div>
@@ -454,7 +454,7 @@ const Sales = () => {
                 <span>Tax:</span>
                 <span>{formatCurrency(totals.taxAmount)}</span>
               </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2">
+              <div className="flex justify-between font-bold text-lg border-t dark:border-gray-600 pt-2">
                 <span>Total:</span>
                 <span>{formatCurrency(totals.total)}</span>
               </div>
@@ -507,10 +507,10 @@ const Sales = () => {
               </div>
               
               {amountReceived && parseFloat(amountReceived) >= totals.total && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-green-800">Change Due:</span>
-                    <span className="text-xl font-bold text-green-800">
+          <span className="font-medium text-green-800 dark:text-green-400">Change Due:</span>
+          <span className="text-xl font-bold text-green-800 dark:text-green-400">
                       {formatCurrency(change)}
                     </span>
                   </div>
