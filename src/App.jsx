@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 import Layout from './components/layout/Layout'
+import InitialSetupGate from './components/ui/InitialSetupGate'
 import AuthLayout from './components/layout/AuthLayout'
 
 // Import Login directly instead of lazy loading to debug
@@ -95,7 +96,9 @@ function App() {
           {/* Protected Routes */}
           <Route path="/" element={
             <ProtectedRoute>
-              <Layout />
+              <InitialSetupGate>
+                <Layout />
+              </InitialSetupGate>
             </ProtectedRoute>
           }>
             <Route index element={<Navigate to="/dashboard" replace />} />

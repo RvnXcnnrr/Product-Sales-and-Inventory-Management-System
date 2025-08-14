@@ -18,45 +18,33 @@ const Login = ({ onRequestRegister, onRequestForgotPassword }) => {
     setError
   } = useForm()
 
+  let submitting = false
   const onSubmit = async (data) => {
+    if (submitting) return
+    submitting = true
     try {
-      // Prevent form submission from causing refreshes
-      const result = await signIn(data.email, data.password)
-      
+      const email = (data.email || '').trim()
+      const password = (data.password || '').trim()
+      const result = await signIn(email, password)
       if (result.error) {
-        console.error('Login error:', result.error.message);
-        
-        // Show modal error
-        showError(
-          'Login Failed', 
-          result.error.message,
-          'error'
-        );
-        
-        // Also set form error
-        setError('root', { 
-          type: 'manual', 
-          message: result.error.message 
-        })
+        const msg = result.error.message || 'Invalid login credentials'
+        if (msg.includes('already in progress')) {
+          // Ignore duplicate attempt
+          submitting = false
+          return
+        }
+        console.error('Login error:', msg)
+        showError('Login Failed', msg, 'error')
+        setError('root', { type: 'manual', message: msg })
       } else {
-        console.log('Login successful');
-        // Let the auth state handle navigation
+        console.log('Login successful')
       }
     } catch (err) {
-      console.error('Exception during login:', err);
-      
-      // Show modal error
-      showError(
-        'Login Error',
-        'An unexpected error occurred. Please try again.',
-        'error'
-      );
-      
-      // Also set form error
-      setError('root', {
-        type: 'manual',
-        message: 'An unexpected error occurred. Please try again.'
-      });
+      console.error('Exception during login:', err)
+      showError('Login Error','An unexpected error occurred. Please try again.','error')
+      setError('root', { type: 'manual', message: 'An unexpected error occurred. Please try again.' })
+    } finally {
+      submitting = false
     }
   }
 

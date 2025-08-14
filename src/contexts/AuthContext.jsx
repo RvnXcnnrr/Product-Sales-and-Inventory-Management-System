@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
   const authListenerRef = useRef(null)
   const hasLoadedRef = useRef(false)
   const authUpdateInProgressRef = useRef(false)
+  const signingInRef = useRef(false)
 
   // Memoized fetchProfile function to prevent recreation on every render
   const fetchProfile = useCallback(async (userId) => {
@@ -36,6 +37,40 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (error) {
+        // PGRST116 -> no rows found (new user, trigger maybe not applied yet)
+        if (error.code === 'PGRST116') {
+          try {
+            const { data: authUser } = await client.auth.getUser()
+            const u = authUser?.user
+            if (u) {
+              const now = new Date().toISOString()
+              const insertPayload = {
+                id: u.id,
+                email: u.email,
+                full_name: u.user_metadata?.full_name || u.email,
+                role: 'owner',
+                created_at: now,
+                updated_at: now,
+                setup_complete: false
+              }
+              const { data: inserted, error: insErr } = await client
+                .from('profiles')
+                .insert([insertPayload])
+                .select('*')
+                .single()
+              if (!insErr && inserted) {
+                setProfile(inserted)
+                return inserted
+              }
+              if (insErr && insErr.code !== '23505') { // ignore unique violation (race)
+                console.error('Profile auto-insert failed:', insErr)
+              }
+            }
+          } catch (ins) {
+            console.error('Profile auto-create exception:', ins)
+          }
+          return null
+        }
         console.error('Error fetching profile:', error)
         return null
       }
@@ -146,21 +181,26 @@ export const AuthProvider = ({ children }) => {
 
   // Sign in with email/password
   const signIn = async (email, password) => {
+    // Prevent overlapping sign-in attempts which can cause spurious 400s
+    if (signingInRef.current) {
+      return { data: null, error: new Error('Sign-in already in progress') }
+    }
     try {
+      signingInRef.current = true
       setLoading(true)
-      try {
-        await client.auth.signOut()
-      } catch (e) {
-        // ignore
+      const cleanEmail = (email || '').trim()
+      const cleanPassword = (password || '').trim()
+      if (!cleanEmail || !cleanPassword) {
+        throw new Error('Email and password are required')
       }
-      await new Promise((r) => setTimeout(r, 100))
-      const { data, error } = await client.auth.signInWithPassword({ email, password })
+      const { data, error } = await client.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword })
       if (error) throw error
       await updateAuthState(data.session)
       return { data, error: null }
     } catch (error) {
       return { data: null, error }
     } finally {
+      signingInRef.current = false
       setLoading(false)
     }
   }

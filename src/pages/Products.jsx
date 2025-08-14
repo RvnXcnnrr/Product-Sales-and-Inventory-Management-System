@@ -121,7 +121,6 @@ const Products = () => {
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
     getValues,
     formState: { errors }
@@ -308,9 +307,31 @@ const Products = () => {
   }
 
   const ProductForm = ({ product, onSubmit, onCancel }) => {
-    const cost = parseFloat(watch('cost_price') || 0)
-    const price = parseFloat(watch('selling_price') || 0)
-    const margin = Math.max(price - cost, 0)
+    // Local controlled state for price fields so users can freely type (including trailing decimal, leading zeros, etc.)
+    const [costInput, setCostInput] = useState(() => (product?.cost_price ?? product?.cost_price === 0 ? String(product.cost_price) : ''))
+    const [priceInput, setPriceInput] = useState(() => (product?.selling_price ?? product?.selling_price === 0 ? String(product.selling_price) : ''))
+
+    // Sync when switching between edit / add modes
+    useEffect(() => {
+      if (product) {
+        setCostInput(product.cost_price === 0 ? '0' : (product.cost_price ? String(product.cost_price) : ''))
+        setPriceInput(product.selling_price === 0 ? '0' : (product.selling_price ? String(product.selling_price) : ''))
+        // Push into react-hook-form state
+        setValue('cost_price', product.cost_price)
+        setValue('selling_price', product.selling_price)
+      } else {
+        setCostInput('')
+        setPriceInput('')
+        setValue('cost_price', '')
+        setValue('selling_price', '')
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product])
+
+    // Derive numeric values (safe parse) for margin display
+    const cost = parseFloat(costInput || '0')
+    const price = parseFloat(priceInput || '0')
+    const margin = isFinite(price - cost) ? Math.max(price - cost, 0) : 0
     const marginPct = price > 0 ? (margin / price) * 100 : 0
     const isEditing = !!product
     return (
@@ -371,15 +392,42 @@ const Products = () => {
           <div>
             <label className="label">Cost Price *</label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              className="input"
+              value={costInput}
+              placeholder="0.00"
               {...register('cost_price', {
                 required: 'Cost price is required',
-                min: { value: 0, message: 'Cost price must be positive' }
+                validate: (v) => {
+                  const num = parseFloat(v)
+                  return (!isNaN(num) && num >= 0) || 'Cost price must be positive'
+                }
               })}
-              className="input"
-              defaultValue={product?.cost_price}
-              placeholder="0.00"
+              onChange={(e) => {
+                const raw = e.target.value
+                // Allow only digits and a single decimal point
+                if (/^[0-9]*\.?[0-9]*$/.test(raw) || raw === '') {
+                  setCostInput(raw)
+                  setValue('cost_price', raw)
+                  // Re-validate selling price if present (ensure selling >= cost)
+                  const currentSelling = getValues('selling_price')
+                  if (currentSelling) {
+                    // trigger manual validation if needed
+                  }
+                }
+              }}
+              onBlur={() => {
+                // Normalize to trimmed numeric string without trailing dot
+                if (costInput === '' || costInput === '.') return
+                const num = parseFloat(costInput)
+                if (!isNaN(num)) {
+                  const fixed = num.toFixed(2)
+                  setCostInput(fixed)
+                  setValue('cost_price', fixed)
+                }
+              }}
             />
             {errors.cost_price && <p className="text-sm text-red-600 mt-1">{errors.cost_price.message}</p>}
           </div>
@@ -387,16 +435,37 @@ const Products = () => {
           <div>
             <label className="label">Selling Price *</label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              className="input"
+              value={priceInput}
+              placeholder="0.00"
               {...register('selling_price', {
                 required: 'Selling price is required',
-                min: { value: 0, message: 'Selling price must be positive' },
-                validate: (v) => parseFloat(v || 0) >= parseFloat(getValues('cost_price') || 0) || 'Selling must be greater than or equal to cost'
+                validate: (v) => {
+                  const num = parseFloat(v)
+                  if (isNaN(num) || num < 0) return 'Selling price must be positive'
+                  const costNum = parseFloat(costInput || '0')
+                  return num >= costNum || 'Selling must be greater than or equal to cost'
+                }
               })}
-              className="input"
-              defaultValue={product?.selling_price}
-              placeholder="0.00"
+              onChange={(e) => {
+                const raw = e.target.value
+                if (/^[0-9]*\.?[0-9]*$/.test(raw) || raw === '') {
+                  setPriceInput(raw)
+                  setValue('selling_price', raw)
+                }
+              }}
+              onBlur={() => {
+                if (priceInput === '' || priceInput === '.') return
+                const num = parseFloat(priceInput)
+                if (!isNaN(num)) {
+                  const fixed = num.toFixed(2)
+                  setPriceInput(fixed)
+                  setValue('selling_price', fixed)
+                }
+              }}
             />
             <p className="text-xs text-gray-500 mt-1">Margin: {formatCurrency(margin)} ({marginPct.toFixed(1)}%)</p>
             {errors.selling_price && <p className="text-sm text-red-600 mt-1">{errors.selling_price.message}</p>}
