@@ -25,12 +25,16 @@
    - Node version: `18`
 
 4. **Add Environment Variables**
-   In Netlify dashboard → Site settings → Environment variables:
+   In Netlify dashboard → Site settings → Environment variables ("Add variable"):
    ```
-   REACT_APP_SUPABASE_URL=your_actual_supabase_url
-   REACT_APP_SUPABASE_ANON_KEY=your_actual_anon_key
-   REACT_APP_ENV=production
-   REACT_APP_DEV_MODE=false
+   VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
+   VITE_SUPABASE_ANON_KEY=your_anon_key_here
+   VITE_APP_NAME=POS & Inventory Management
+   VITE_DEV_MODE=false
+   # Optional:
+   # VITE_DEBUG_MODE=false
+   # VITE_SESSION_TIMEOUT=3600000
+   # VITE_DEFAULT_CURRENCY=PHP
    ```
 
 ### Option 2: Manual Deploy
@@ -54,20 +58,23 @@
 
 ## Environment Variables Setup
 
-### Required Variables
+The app is built with Vite; ONLY variables prefixed with `VITE_` are exposed to the client.
+
+### Required
 ```env
-REACT_APP_SUPABASE_URL=https://your-project.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-### Optional Variables
+### Recommended / Optional
 ```env
-REACT_APP_ENV=production
-REACT_APP_DEV_MODE=false
-REACT_APP_DEBUG_MODE=false
-REACT_APP_DEFAULT_CURRENCY=USD
-REACT_APP_DEFAULT_TAX_RATE=0.10
+VITE_APP_NAME="POS & Inventory Management"
+VITE_DEV_MODE=false
+VITE_DEBUG_MODE=false
+VITE_DEFAULT_CURRENCY=PHP
+VITE_SESSION_TIMEOUT=3600000
 ```
+> Never commit actual keys to the repo; set them in Netlify UI.
 
 ## Custom Domain Setup
 
@@ -91,14 +98,14 @@ The `netlify.toml` file includes:
 ## Troubleshooting
 
 ### Build Errors
-- Check Node.js version (should be 18+)
-- Verify all dependencies are installed
-- Check environment variables are set
+- Ensure Node.js version in Netlify is 18 (netlify.toml already sets this)
+- Verify dependencies installed / lockfile present
+- Confirm required `VITE_` env vars defined
 
 ### Runtime Errors
-- Check browser console for errors
-- Verify Supabase configuration
-- Check network requests in dev tools
+- Open browser console & Network tab
+- Verify `VITE_SUPABASE_URL` matches your project ref
+- Check that auth requests (auth/v1/token, rest/v1) return 200/2xx
 
 ### PWA Issues
 - Ensure manifest.json is accessible
@@ -114,14 +121,16 @@ The `netlify.toml` file includes:
 
 ## Post-Deployment Checklist
 
-- [ ] Test authentication flow
-- [ ] Verify database connection
-- [ ] Test offline functionality
-- [ ] Check mobile responsiveness
-- [ ] Validate PWA installation
-- [ ] Test all major features
-- [ ] Setup custom domain (optional)
-- [ ] Configure analytics (optional)
+- [ ] Auth: register → email verify (if enabled) → login
+- [ ] Initial setup modals (store + profile) appear for new user
+- [ ] Products CRUD works (network calls succeed)
+- [ ] Inventory adjustments reflect correctly
+- [ ] Sales flow completes (transaction + items)
+- [ ] Reports load without 401/403
+- [ ] Responsive layout on mobile
+- [ ] PWA manifest & service worker (if ENABLE_PWA later enabled)
+- [ ] Custom domain & HTTPS (optional)
+- [ ] Analytics / monitoring (optional)
 
 ## Continuous Deployment
 

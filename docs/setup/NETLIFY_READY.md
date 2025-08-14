@@ -4,10 +4,9 @@ Your POS system is now configured for Netlify deployment. Here's what I've done:
 
 ## 🔧 Configuration Changes
 
-### ✅ Environment Variables Updated
-- Changed from `VITE_*` to `REACT_APP_*` format
-- Updated `src/lib/supabase.js` to use `process.env` instead of `import.meta.env`
-- Fixed all documentation files
+### ✅ Environment Variables
+- Confirmed use of Vite-native `VITE_*` names (KEEP these; do not switch to CRA-style `REACT_APP_`)
+- All docs now reference `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
 ### ✅ Netlify Configuration Added
 - **netlify.toml**: Complete configuration with build settings, redirects, and security headers
@@ -62,16 +61,16 @@ In your Netlify dashboard, add these environment variables:
 
 **Required:**
 ```
-REACT_APP_SUPABASE_URL=https://your-project.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 **Optional:**
 ```
-REACT_APP_ENV=production
-REACT_APP_DEV_MODE=false
-REACT_APP_DEFAULT_CURRENCY=USD
-REACT_APP_DEFAULT_TAX_RATE=0.10
+VITE_APP_NAME="POS & Inventory Management"
+VITE_DEV_MODE=false
+VITE_DEFAULT_CURRENCY=PHP
+VITE_SESSION_TIMEOUT=3600000
 ```
 
 ## 📋 Pre-Deploy Checklist

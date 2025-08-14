@@ -14,6 +14,9 @@
   
   # NPM version
   NPM_VERSION = "9"
+  # NOTE: Do NOT put secrets here in the repo. Set these in Netlify UI:
+  #   VITE_SUPABASE_URL
+  #   VITE_SUPABASE_ANON_KEY
 
 # Headers for security and performance
 [[headers]]
@@ -50,13 +53,16 @@
   to = "/index.html"
   status = 200
   
-# API redirects (if needed for backend integration)
-[[redirects]]
-  from = "/api/*"
-  to = "https://your-supabase-project.supabase.co/rest/v1/:splat"
-  status = 200
-  force = true
-  headers = {Authorization = "Bearer YOUR_SUPABASE_ANON_KEY"}
+# Backend API proxy (disabled by default)
+# If you later want a clean /api/* proxy to Supabase REST, you can UNCOMMENT & replace the domain.
+# Be aware: Adding the anon key in a public redirect header exposes it (it is already public, but avoid duplication).
+# Prefer calling Supabase directly from the client with the JS SDK.
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://YOUR-PROJECT-REF.supabase.co/rest/v1/:splat"
+#   status = 200
+#   force = true
+#   headers = { Authorization = "Bearer ${VITE_SUPABASE_ANON_KEY}" }
 
 # PWA redirects
 [[redirects]]
@@ -73,16 +79,14 @@
 
 # Environment-specific settings
 [context.production.environment]
-  REACT_APP_ENV = "production"
-  REACT_APP_DEV_MODE = "false"
+  VITE_APP_NAME = "POS & Inventory Management"
+  VITE_DEV_MODE = "false"
 
 [context.deploy-preview.environment]
-  REACT_APP_ENV = "staging"
-  REACT_APP_DEV_MODE = "true"
+  VITE_DEV_MODE = "true"
 
 [context.branch-deploy.environment]
-  REACT_APP_ENV = "development"
-  REACT_APP_DEV_MODE = "true"
+  VITE_DEV_MODE = "true"
 
 # Functions (if you add serverless functions later)
 [functions]
